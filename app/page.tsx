@@ -40,7 +40,7 @@ export default function LoginPage() {
         <form onSubmit={handleLogin} className="space-y-6">
           {/* Email Input */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-medium text-gray-900 mb-1">
               Email Address
             </label>
             <div className="relative">
@@ -50,7 +50,7 @@ export default function LoginPage() {
               <input
                 type="email"
                 required
-                className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 transition"
+                className="block w-full pl-10 pr-3 py-2 border text-gray-900 border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 transition"
                 placeholder="admin@chalbo.com"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
@@ -60,7 +60,7 @@ export default function LoginPage() {
 
           {/* Password Input */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-medium text-gray-900 mb-1">
               Password
             </label>
             <div className="relative">
@@ -70,7 +70,7 @@ export default function LoginPage() {
               <input
                 type="password"
                 required
-                className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 transition"
+                className="block w-full pl-10 pr-3 py-2 border text-gray-900 border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 transition"
                 placeholder="••••••••"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}

@@ -137,7 +137,7 @@ export default function CreateTripPage() {
                   value={formData.clientId}
                   onChange={handleChange}
                   required
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2.5 focus:ring-blue-500 focus:border-blue-500 bg-white"
+                  className="w-full border text-gray-900 border-gray-300 rounded-lg px-3 py-2.5 focus:ring-blue-500 focus:border-blue-500 bg-white"
                 >
                   <option value="">-- Choose a Client --</option>
                   {clients.map(client => (
@@ -158,7 +158,7 @@ export default function CreateTripPage() {
                 name="tripType"
                 value={formData.tripType}
                 onChange={handleChange}
-                className="w-full border border-gray-300 rounded-lg px-3 py-2.5 focus:ring-blue-500 focus:border-blue-500 bg-white"
+                className="w-full border text-gray-900 border-gray-300 rounded-lg px-3 py-2.5 focus:ring-blue-500 focus:border-blue-500 bg-white"
               >
                 <option value="One Way">One Way</option>
                 <option value="Round Trip">Round Trip</option>
@@ -187,7 +187,7 @@ export default function CreateTripPage() {
                 onChange={handleChange}
                 placeholder="e.g. Airport Terminal 1"
                 required
-                className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-blue-500 focus:border-blue-500"
+                className="w-full border text-gray-900 border-gray-300 rounded-lg px-3 py-2 focus:ring-blue-500 focus:border-blue-500"
               />
             </div>
 
@@ -200,7 +200,7 @@ export default function CreateTripPage() {
                 onChange={handleChange}
                 placeholder="e.g. Hotel Grand Central"
                 required
-                className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-blue-500 focus:border-blue-500"
+                className="w-full border border-gray-300 text-gray-900 rounded-lg px-3 py-2 focus:ring-blue-500 focus:border-blue-500"
               />
             </div>
 
@@ -214,7 +214,7 @@ export default function CreateTripPage() {
                   value={formData.startDate}
                   onChange={handleChange}
                   required
-                  className="w-full border border-gray-300 rounded-lg pl-10 pr-3 py-2 focus:ring-blue-500 focus:border-blue-500"
+                  className="w-full border text-gray-900 border-gray-300 rounded-lg pl-10 pr-3 py-2 focus:ring-blue-500 focus:border-blue-500"
                 />
               </div>
             </div>
@@ -229,7 +229,7 @@ export default function CreateTripPage() {
                   value={formData.startTime}
                   onChange={handleChange}
                   required
-                  className="w-full border border-gray-300 rounded-lg pl-10 pr-3 py-2 focus:ring-blue-500 focus:border-blue-500"
+                  className="w-full border text-gray-900 border-gray-300 rounded-lg pl-10 pr-3 py-2 focus:ring-blue-500 focus:border-blue-500"
                 />
               </div>
             </div>
@@ -245,7 +245,7 @@ export default function CreateTripPage() {
             value={formData.notes}
             onChange={handleChange}
             placeholder="Flight number, special luggage request, etc."
-            className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-blue-500 focus:border-blue-500"
+            className="w-full border text-gray-900 border-gray-300 rounded-lg px-3 py-2 focus:ring-blue-500 focus:border-blue-500"
           ></textarea>
         </div>
 

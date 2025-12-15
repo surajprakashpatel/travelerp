@@ -202,25 +202,25 @@ export default function AgentsPage() {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 p-4">
           <div className="bg-white rounded-xl shadow-xl w-full max-w-md">
             <div className="flex justify-between items-center px-6 py-4 border-b bg-gray-50">
-              <h2 className="text-lg font-bold">{isEditing ? "Edit Agent" : "Add Agent"}</h2>
+              <h2 className="text-lg text-gray-900 font-bold">{isEditing ? "Edit Agent" : "Add Agent"}</h2>
               <button onClick={() => setIsModalOpen(false)}><X className="h-5 w-5 text-gray-400" /></button>
             </div>
             <form onSubmit={handleSubmit} className="p-6 space-y-4">
               <div>
-                <label className="block text-sm font-medium mb-1">Agent Name *</label>
-                <input name="name" required className="w-full border rounded-lg px-3 py-2" value={formData.name} onChange={handleInputChange} />
+                <label className="block text-sm text-gray-900 font-medium mb-1">Agent Name *</label>
+                <input name="name" required className="w-full border text-gray-900 rounded-lg px-3 py-2" value={formData.name} onChange={handleInputChange} />
               </div>
               <div>
-                <label className="block text-sm font-medium mb-1">Agency Name</label>
-                <input name="agencyName" className="w-full border rounded-lg px-3 py-2" value={formData.agencyName} onChange={handleInputChange} />
+                <label className="block text-sm text-gray-900 font-medium mb-1">Agency Name</label>
+                <input name="agencyName" className="w-full border text-gray-900 rounded-lg px-3 py-2" value={formData.agencyName} onChange={handleInputChange} />
               </div>
               <div>
-                <label className="block text-sm font-medium mb-1">Mobile Number *</label>
-                <input name="mobile" required className="w-full border rounded-lg px-3 py-2" value={formData.mobile} onChange={handleInputChange} />
+                <label className="block text-sm text-gray-900 font-medium mb-1">Mobile Number *</label>
+                <input name="mobile" required className="w-full border text-gray-900 rounded-lg px-3 py-2" value={formData.mobile} onChange={handleInputChange} />
               </div>
               <div>
-                <label className="block text-sm font-medium mb-1">City</label>
-                <input name="officeCity" className="w-full border rounded-lg px-3 py-2" value={formData.officeCity} onChange={handleInputChange} />
+                <label className="block text-sm text-gray-900 font-medium mb-1">City</label>
+                <input name="officeCity" className="w-full border text-gray-900 rounded-lg px-3 py-2" value={formData.officeCity} onChange={handleInputChange} />
               </div>
               <button type="submit" className="w-full py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 mt-2">
                 {isEditing ? "Update Agent" : "Save Agent"}

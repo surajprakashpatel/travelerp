@@ -151,14 +151,14 @@ export default function VehiclesPage() {
         <input
           type="text"
           placeholder="Search Number, Model or Owner..."
-          className="block w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-blue-500"
+          className="block w-full pl-10 pr-4 text-gray-900 py-2 border border-gray-300 rounded-lg focus:ring-blue-500"
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
         />
       </div>
 
       {/* Table */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+      <div className="bg-white rounded-xl shadow-sm border  border-gray-100 overflow-hidden">
         {loading ? (
           <div className="p-8 text-center text-gray-500">Loading vehicles...</div>
         ) : (
@@ -224,7 +224,7 @@ export default function VehiclesPage() {
                   name="number" 
                   placeholder="e.g. WB 02 AK 1234"
                   required 
-                  className="w-full border rounded-lg px-3 py-2 uppercase" 
+                  className="w-full border text-gray-900 rounded-lg px-3 py-2 uppercase" 
                   value={formData.number} 
                   onChange={handleInputChange} 
                 />
@@ -237,7 +237,7 @@ export default function VehiclesPage() {
                     name="model" 
                     placeholder="e.g. Innova Crysta"
                     required 
-                    className="w-full border rounded-lg px-3 py-2" 
+                    className="w-full border text-gray-900 rounded-lg px-3 py-2" 
                     value={formData.model} 
                     onChange={handleInputChange} 
                   />
@@ -246,7 +246,7 @@ export default function VehiclesPage() {
                   <label className="block text-sm font-medium mb-1">Type</label>
                   <select 
                     name="type" 
-                    className="w-full border rounded-lg px-3 py-2 bg-white" 
+                    className="w-full border text-gray-900 rounded-lg px-3 py-2 bg-white" 
                     value={formData.type} 
                     onChange={handleInputChange}
                   >
@@ -264,7 +264,7 @@ export default function VehiclesPage() {
                 <input 
                   name="owner" 
                   placeholder="Leave empty if Own Fleet"
-                  className="w-full border rounded-lg px-3 py-2" 
+                  className="w-full border text-gray-900 rounded-lg px-3 py-2" 
                   value={formData.owner} 
                   onChange={handleInputChange} 
                 />

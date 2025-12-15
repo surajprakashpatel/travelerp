@@ -163,14 +163,14 @@ export default function ClientsPage() {
         <input
           type="text"
           placeholder="Search by Name or Mobile..."
-          className="block w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
+          className="block w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg text-gray-900 focus:ring-blue-500 focus:border-blue-500"
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
         />
       </div>
 
       {/* Client Table */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+      <div className="bg-white rounded-xl shadow-sm border  border-gray-100 overflow-hidden">
         {loading ? (
           <div className="p-8 text-center text-gray-500">Loading clients...</div>
         ) : filteredClients.length === 0 ? (
@@ -264,7 +264,7 @@ export default function ClientsPage() {
                   type="text"
                   name="name"
                   required
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-blue-500 focus:border-blue-500"
+                  className="w-full border text-gray-900 border-gray-300 rounded-lg px-3 py-2 focus:ring-blue-500 focus:border-blue-500"
                   value={formData.name}
                   onChange={handleInputChange}
                 />
@@ -278,7 +278,7 @@ export default function ClientsPage() {
                   type="tel"
                   name="mobile"
                   required
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-blue-500 focus:border-blue-500"
+                  className="w-full border border-gray-300 text-gray-900 rounded-lg px-3 py-2 focus:ring-blue-500 focus:border-blue-500"
                   value={formData.mobile}
                   onChange={handleInputChange}
                 />
@@ -291,7 +291,7 @@ export default function ClientsPage() {
                 <input
                   type="email"
                   name="email"
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-blue-500 focus:border-blue-500"
+                  className="w-full border text-gray-900 border-gray-300 rounded-lg px-3 py-2 focus:ring-blue-500 focus:border-blue-500"
                   value={formData.email}
                   onChange={handleInputChange}
                 />
@@ -304,7 +304,7 @@ export default function ClientsPage() {
                 <textarea
                   name="address"
                   rows={3}
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-blue-500 focus:border-blue-500"
+                  className="w-full border border-gray-300 text-gray-900 rounded-lg px-3 py-2 focus:ring-blue-500 focus:border-blue-500"
                   value={formData.address}
                   onChange={handleInputChange}
                 />

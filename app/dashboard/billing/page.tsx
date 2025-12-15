@@ -275,7 +275,7 @@ export default function BillingPage() {
             <div className="flex justify-between items-center mb-6 pb-4 border-b">
               <div>
                 <h2 className="text-xl font-bold text-gray-800">Generate Invoice</h2>
-                <p className="text-sm text-gray-500">Trip ID: {selectedTrip.tripId} | {selectedTrip.clientName}</p>
+                <p className="text-sm text-gray-800">Trip ID: {selectedTrip.tripId} | {selectedTrip.clientName}</p>
               </div>
               <Receipt className="h-8 w-8 text-blue-200" />
             </div>
@@ -286,15 +286,15 @@ export default function BillingPage() {
               <div className="space-y-4 p-4 bg-gray-50 rounded-lg">
                 <h3 className="font-semibold text-sm text-gray-700">Odometer Readings</h3>
                 <div>
-                  <label className="text-xs text-gray-500">Opening KM</label>
-                  <input type="number" name="openingKm" value={billData.openingKm} onChange={handleInputChange} className="w-full border rounded p-2 text-sm" />
+                  <label className="text-xs text-gray-800">Opening KM</label>
+                  <input type="number" name="openingKm" value={billData.openingKm} onChange={handleInputChange} className="w-full border text-gray-800 rounded p-2 text-sm" />
                 </div>
                 <div>
-                  <label className="text-xs text-gray-500">Closing KM</label>
-                  <input type="number" name="closingKm" value={billData.closingKm} onChange={handleInputChange} className="w-full border rounded p-2 text-sm" />
+                  <label className="text-xs text-gray-800">Closing KM</label>
+                  <input type="number" name="closingKm" value={billData.closingKm} onChange={handleInputChange} className="w-full border text-gray-800 rounded p-2 text-sm" />
                 </div>
                 <div className="flex justify-between items-center pt-2">
-                  <span className="text-sm font-medium">Total KM:</span>
+                  <span className="text-sm text-gray-800 font-medium">Total KM:</span>
                   <span className="text-lg font-bold text-blue-600">{calculations.totalKm}</span>
                 </div>
               </div>
@@ -303,16 +303,16 @@ export default function BillingPage() {
               <div className="space-y-4 p-4 bg-gray-50 rounded-lg">
                 <h3 className="font-semibold text-sm text-gray-700">Rates & Charges</h3>
                 <div>
-                  <label className="text-xs text-gray-500">Rate / KM (₹)</label>
-                  <input type="number" name="ratePerKm" value={billData.ratePerKm} onChange={handleInputChange} className="w-full border rounded p-2 text-sm" />
+                  <label className="text-xs  text-gray-500">Rate / KM (₹)</label>
+                  <input type="number" name="ratePerKm" value={billData.ratePerKm} onChange={handleInputChange} className="w-full border text-gray-800 rounded p-2 text-sm" />
                 </div>
                 <div>
                   <label className="text-xs text-gray-500">Driver Allowance</label>
-                  <input type="number" name="driverAllowance" value={billData.driverAllowance} onChange={handleInputChange} className="w-full border rounded p-2 text-sm" />
+                  <input type="number" name="driverAllowance" value={billData.driverAllowance} onChange={handleInputChange} className="w-full border text-gray-800 rounded p-2 text-sm" />
                 </div>
                 <div>
                   <label className="text-xs text-gray-500">Toll / Parking</label>
-                  <input type="number" name="tollParking" value={billData.tollParking} onChange={handleInputChange} className="w-full border rounded p-2 text-sm" />
+                  <input type="number" name="tollParking" value={billData.tollParking} onChange={handleInputChange} className="w-full border text-gray-800 rounded p-2 text-sm" />
                 </div>
               </div>
 
@@ -322,7 +322,7 @@ export default function BillingPage() {
                   <Calculator className="h-4 w-4" /> Final Calculation
                 </h3>
                 
-                <div className="space-y-2 text-sm">
+                <div className="space-y-2 text-gray-800 text-sm">
                   <div className="flex justify-between">
                     <span>Base Fare</span>
                     <span>₹{calculations.baseAmount.toFixed(2)}</span>
@@ -343,7 +343,7 @@ export default function BillingPage() {
 
                 <div className="pt-2">
                    <label className="text-xs text-gray-500">Advance Paid</label>
-                   <input type="number" name="advance" value={billData.advance} onChange={handleInputChange} className="w-full border rounded p-2 text-sm" />
+                   <input type="number" name="advance" value={billData.advance} onChange={handleInputChange} className="w-full border rounded text-gray-800 p-2 text-sm" />
                 </div>
 
                 <div className="flex justify-between font-bold text-red-600 pt-2 text-lg">
