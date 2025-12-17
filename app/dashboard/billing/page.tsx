@@ -42,9 +42,13 @@ export default function BillingPage() {
     ratePerKm: 15, // Default rate
     minKm: 0, // Minimum daily KM logic (optional)
     extraHourCharge: 0,
+    extraHours: 0,
+    extraKm: 0,
+    nightCharge: 0,
     tollParking: 0,
     driverAllowance: 300,
     advance: 0,
+    gstEnabled: true,
     gstPercent: 5,
   });
 
@@ -87,11 +91,17 @@ export default function BillingPage() {
     const totalKm = Math.max(0, billData.closingKm - billData.openingKm);
     const baseAmount = totalKm * billData.ratePerKm;
     
-    // Simple logic: Base + Extra + Driver + Toll
-    const subTotal = baseAmount + billData.extraHourCharge + billData.driverAllowance + billData.tollParking;
+    // Simple logic: Base + Extra + Driver + Toll + Night + Extra Hours + Extra KM
+    const subTotal = baseAmount + 
+                     billData.extraHourCharge + 
+                     billData.driverAllowance + 
+                     billData.tollParking + 
+                     billData.nightCharge + 
+                     (billData.extraHours * billData.extraHourCharge) + 
+                     (billData.extraKm * billData.ratePerKm);
     
-    // GST
-    const gstAmount = (subTotal * billData.gstPercent) / 100;
+    // GST (only if enabled)
+    const gstAmount = billData.gstEnabled ? (subTotal * billData.gstPercent) / 100 : 0;
     
     const grandTotal = subTotal + gstAmount;
     const balanceDue = grandTotal - billData.advance;
@@ -108,8 +118,13 @@ export default function BillingPage() {
 
   // --- 3. Handle Input ---
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    setBillData(prev => ({ ...prev, [name]: parseFloat(value) || 0 }));
+    const { name, value, type, checked } = e.target;
+    
+    if (type === 'checkbox') {
+      setBillData(prev => ({ ...prev, [name]: checked }));
+    } else {
+      setBillData(prev => ({ ...prev, [name]: parseFloat(value) || 0 }));
+    }
   };
 
   // --- 4. Generate PDF & Save Bill ---
@@ -194,7 +209,10 @@ export default function BillingPage() {
         ['Driver Allowance', '-', billData.driverAllowance.toFixed(2)],
         ['Toll & Parking', '-', billData.tollParking.toFixed(2)],
         ['Extra Charges', '-', billData.extraHourCharge.toFixed(2)],
-        ['GST', `${billData.gstPercent}%`, calculations.gstAmount.toFixed(2)],
+        ['Night Charge', '-', billData.nightCharge.toFixed(2)],
+        ['Extra Hours', `${billData.extraHours} hrs`, (billData.extraHours * billData.extraHourCharge).toFixed(2)],
+        ['Extra KM', `${billData.extraKm} km`, (billData.extraKm * billData.ratePerKm).toFixed(2)],
+        ...(billData.gstEnabled ? [['GST', `${billData.gstPercent}%`, calculations.gstAmount.toFixed(2)]] : []),
       ],
       theme: 'striped',
     });
@@ -280,7 +298,7 @@ export default function BillingPage() {
               <Receipt className="h-8 w-8 text-blue-200" />
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
               
               {/* Readings */}
               <div className="space-y-4 p-4 bg-gray-50 rounded-lg">
@@ -314,6 +332,27 @@ export default function BillingPage() {
                   <label className="text-xs text-gray-500">Toll / Parking</label>
                   <input type="number" name="tollParking" value={billData.tollParking} onChange={handleInputChange} className="w-full border text-gray-800 rounded p-2 text-sm" />
                 </div>
+                <div>
+                  <label className="text-xs text-gray-500">Extra Hour Charge (₹)</label>
+                  <input type="number" name="extraHourCharge" value={billData.extraHourCharge} onChange={handleInputChange} className="w-full border text-gray-800 rounded p-2 text-sm" />
+                </div>
+              </div>
+
+              {/* Additional Charges */}
+              <div className="space-y-4 p-4 bg-gray-50 rounded-lg">
+                <h3 className="font-semibold text-sm text-gray-700">Additional Charges</h3>
+                <div>
+                  <label className="text-xs text-gray-500">Night Charge (₹)</label>
+                  <input type="number" name="nightCharge" value={billData.nightCharge} onChange={handleInputChange} className="w-full border text-gray-800 rounded p-2 text-sm" />
+                </div>
+                <div>
+                  <label className="text-xs text-gray-500">Extra Hours</label>
+                  <input type="number" name="extraHours" value={billData.extraHours} onChange={handleInputChange} className="w-full border text-gray-800 rounded p-2 text-sm" />
+                </div>
+                <div>
+                  <label className="text-xs text-gray-500">Extra KM</label>
+                  <input type="number" name="extraKm" value={billData.extraKm} onChange={handleInputChange} className="w-full border text-gray-800 rounded p-2 text-sm" />
+                </div>
               </div>
 
               {/* Totals */}
@@ -331,10 +370,38 @@ export default function BillingPage() {
                     <span>Extras</span>
                     <span>₹{(calculations.subTotal - calculations.baseAmount).toFixed(2)}</span>
                   </div>
-                  <div className="flex justify-between">
-                    <span>GST ({billData.gstPercent}%)</span>
-                    <span>₹{calculations.gstAmount.toFixed(2)}</span>
+                  
+                  {/* GST Toggle */}
+                  <div className="flex justify-between items-center pt-2 border-t border-blue-200">
+                    <label className="flex items-center gap-2 cursor-pointer">
+                      <input 
+                        type="checkbox" 
+                        name="gstEnabled" 
+                        checked={billData.gstEnabled} 
+                        onChange={handleInputChange}
+                        className="w-4 h-4"
+                      />
+                      <span>Enable GST</span>
+                    </label>
+                    {billData.gstEnabled && (
+                      <input 
+                        type="number" 
+                        name="gstPercent" 
+                        value={billData.gstPercent} 
+                        onChange={handleInputChange}
+                        className="w-16 border rounded p-1 text-xs text-center"
+                        placeholder="%"
+                      />
+                    )}
                   </div>
+                  
+                  {billData.gstEnabled && (
+                    <div className="flex justify-between">
+                      <span>GST ({billData.gstPercent}%)</span>
+                      <span>₹{calculations.gstAmount.toFixed(2)}</span>
+                    </div>
+                  )}
+                  
                   <div className="flex justify-between font-bold text-lg pt-2 border-t border-blue-200">
                     <span>Grand Total</span>
                     <span>₹{calculations.grandTotal.toFixed(2)}</span>

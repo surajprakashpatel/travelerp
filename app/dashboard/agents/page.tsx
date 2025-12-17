@@ -143,7 +143,7 @@ export default function AgentsPage() {
         <input
           type="text"
           placeholder="Search Agency, Name or City..."
-          className="block w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-blue-500"
+          className="block w-full pl-10 pr-4 text-gray-800 py-2 border border-gray-300 rounded-lg focus:ring-blue-500"
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
         />
@@ -211,7 +211,7 @@ export default function AgentsPage() {
                 <input name="name" required className="w-full border text-gray-900 rounded-lg px-3 py-2" value={formData.name} onChange={handleInputChange} />
               </div>
               <div>
-                <label className="block text-sm text-gray-900 font-medium mb-1">Agency Name</label>
+                <label className="block text-sm text-gray-900 font-medium mb-1">Legal Company Name</label>
                 <input name="agencyName" className="w-full border text-gray-900 rounded-lg px-3 py-2" value={formData.agencyName} onChange={handleInputChange} />
               </div>
               <div>

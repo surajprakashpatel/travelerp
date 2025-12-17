@@ -142,7 +142,7 @@ export default function DriversPage() {
         <input
           type="text"
           placeholder="Search Name, Mobile or License..."
-          className="block w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-blue-500"
+          className="block w-full pl-10 pr-4 py-2 border border-gray-300 text-gray-800 rounded-lg focus:ring-blue-500"
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
         />
@@ -194,25 +194,25 @@ export default function DriversPage() {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 p-4">
           <div className="bg-white rounded-xl shadow-xl w-full max-w-md">
             <div className="flex justify-between items-center px-6 py-4 border-b bg-gray-50">
-              <h2 className="text-lg font-bold">{isEditing ? "Edit Driver" : "Add Driver"}</h2>
+              <h2 className="text-lg  text-gray-800 font-bold">{isEditing ? "Edit Driver" : "Add Driver"}</h2>
               <button onClick={() => setIsModalOpen(false)}><X className="h-5 w-5 text-gray-400" /></button>
             </div>
             <form onSubmit={handleSubmit} className="p-6 space-y-4">
               <div>
-                <label className="block text-sm font-medium mb-1">Full Name *</label>
-                <input name="name" required className="w-full border rounded-lg px-3 py-2" value={formData.name} onChange={handleInputChange} />
+                <label className="block text-sm text-gray-700 font-medium mb-1">Full Name *</label>
+                <input name="name" required className="w-full border text-gray-800 rounded-lg px-3 py-2" value={formData.name} onChange={handleInputChange} />
               </div>
               <div>
-                <label className="block text-sm font-medium mb-1">Mobile Number *</label>
-                <input name="mobile" required className="w-full border rounded-lg px-3 py-2" value={formData.mobile} onChange={handleInputChange} />
+                <label className="block text-sm text-gray-700 font-medium mb-1">Mobile Number *</label>
+                <input name="mobile" required className="w-full border text-gray-800 rounded-lg px-3 py-2" value={formData.mobile} onChange={handleInputChange} />
               </div>
               <div>
-                <label className="block text-sm font-medium mb-1">Driving License No.</label>
-                <input name="licenseNumber" className="w-full border rounded-lg px-3 py-2" value={formData.licenseNumber} onChange={handleInputChange} />
+                <label className="block text-sm text-gray-700 font-medium mb-1">Driving License No.</label>
+                <input name="licenseNumber" className="w-full border text-gray-800 rounded-lg px-3 py-2" value={formData.licenseNumber} onChange={handleInputChange} />
               </div>
               <div>
-                <label className="block text-sm font-medium mb-1">Address</label>
-                <input name="address" className="w-full border rounded-lg px-3 py-2" value={formData.address} onChange={handleInputChange} />
+                <label className="block text-sm text-gray-700 font-medium mb-1">Address</label>
+                <input name="address" className="w-full border text-gray-800 rounded-lg px-3 py-2" value={formData.address} onChange={handleInputChange} />
               </div>
               <button type="submit" className="w-full py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 mt-2">
                 {isEditing ? "Update Driver" : "Save Driver"}

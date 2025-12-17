@@ -163,7 +163,7 @@ export default function CreateTripPage() {
                 <option value="One Way">One Way</option>
                 <option value="Round Trip">Round Trip</option>
                 <option value="Rental (8hr/80km)">Rental (8hr/80km)</option>
-                <option value="Rental (12hr/300km)">Rental (12hr/300km)</option>
+                <option value="Rental (12hr/300km)">Rental (12hr/120km)</option>
                 <option value="Outstation">Outstation</option>
               </select>
             </div>

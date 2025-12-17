@@ -141,7 +141,7 @@ export default function VehiclesPage() {
       <div className="flex justify-between items-center">
         <h1 className="text-2xl font-bold text-gray-800">Vehicle Database</h1>
         <button onClick={openAddModal} className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition shadow-sm">
-          <Plus className="h-4 w-4" /> Add Vehicle
+          <Plus className="h-4  w-4" /> Add Vehicle
         </button>
       </div>
 
@@ -213,13 +213,13 @@ export default function VehiclesPage() {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 p-4">
           <div className="bg-white rounded-xl shadow-xl w-full max-w-md">
             <div className="flex justify-between items-center px-6 py-4 border-b bg-gray-50">
-              <h2 className="text-lg font-bold">{isEditing ? "Edit Vehicle" : "Add Vehicle"}</h2>
+              <h2 className="text-lg text-gray-800 font-bold">{isEditing ? "Edit Vehicle" : "Add Vehicle"}</h2>
               <button onClick={() => setIsModalOpen(false)}><X className="h-5 w-5 text-gray-400" /></button>
             </div>
             <form onSubmit={handleSubmit} className="p-6 space-y-4">
               
               <div>
-                <label className="block text-sm font-medium mb-1">Vehicle Number (Plate) *</label>
+                <label className="block text-sm text-gray-800 font-medium mb-1">Vehicle Number (Plate) *</label>
                 <input 
                   name="number" 
                   placeholder="e.g. WB 02 AK 1234"
@@ -232,7 +232,7 @@ export default function VehiclesPage() {
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium mb-1">Model *</label>
+                  <label className="block text-sm text-gray-800 font-medium mb-1">Model *</label>
                   <input 
                     name="model" 
                     placeholder="e.g. Innova Crysta"
@@ -243,7 +243,7 @@ export default function VehiclesPage() {
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium mb-1">Type</label>
+                  <label className="block text-sm text-gray-800 font-medium mb-1">Type</label>
                   <select 
                     name="type" 
                     className="w-full border text-gray-900 rounded-lg px-3 py-2 bg-white" 
@@ -260,7 +260,7 @@ export default function VehiclesPage() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium mb-1">Owner / Agency Name</label>
+                <label className="block text-sm text-gray-800 font-medium mb-1">Owner / Agency Name</label>
                 <input 
                   name="owner" 
                   placeholder="Leave empty if Own Fleet"
