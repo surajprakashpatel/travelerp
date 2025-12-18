@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { db } from "@/libs/firebase";
+import { useAuth } from "@/context/AuthContext"; 
 import { 
   collection, 
   addDoc, 
@@ -27,6 +28,7 @@ export default function AgentsPage() {
   const [filteredAgents, setFilteredAgents] = useState<Agent[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
+  const { user } = useAuth();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [currentId, setCurrentId] = useState<string | null>(null);
@@ -41,8 +43,10 @@ export default function AgentsPage() {
 
   const fetchAgents = async () => {
     try {
+      if (!user?.uid) return;
       setLoading(true);
-      const querySnapshot = await getDocs(collection(db, "agents"));
+      const agentsRef = collection(db, "agencies", user.uid, "agents");
+      const querySnapshot = await getDocs(agentsRef);
       const list = querySnapshot.docs.map((doc) => ({
         id: doc.id,
         ...doc.data(),
@@ -101,11 +105,13 @@ export default function AgentsPage() {
     }
 
     try {
+      if (!user?.uid) return;
       if (isEditing && currentId) {
-        await updateDoc(doc(db, "agents", currentId), { ...formData });
+        const agentsRef = collection(db, "agencies", user.uid, "agents");
+        await updateDoc(doc(agentsRef, currentId), { ...formData });
         toast.success("Agent updated");
       } else {
-        await addDoc(collection(db, "agents"), {
+        await addDoc(collection(db, "agencies", user.uid, "agents"), {
           ...formData,
           createdAt: serverTimestamp(),
         });

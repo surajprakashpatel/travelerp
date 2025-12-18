@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { db } from "@/libs/firebase";
+import { useAuth } from "@/context/AuthContext";
 import { 
   collection, 
   addDoc, 
@@ -30,6 +31,7 @@ export default function DriversPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [currentId, setCurrentId] = useState<string | null>(null);
+  const { user } = useAuth();
 
   const [formData, setFormData] = useState({
     name: "",
@@ -40,8 +42,9 @@ export default function DriversPage() {
 
   const fetchDrivers = async () => {
     try {
+      if (!user?.uid) return;
       setLoading(true);
-      const querySnapshot = await getDocs(collection(db, "drivers"));
+      const querySnapshot = await getDocs(collection(db, "agencies", user.uid, "drivers"));
       const list = querySnapshot.docs.map((doc) => ({
         id: doc.id,
         ...doc.data(),
@@ -100,11 +103,12 @@ export default function DriversPage() {
     }
 
     try {
+      if (!user?.uid) return;
       if (isEditing && currentId) {
         await updateDoc(doc(db, "drivers", currentId), { ...formData });
         toast.success("Driver updated");
       } else {
-        await addDoc(collection(db, "drivers"), {
+        await addDoc(collection(db, "agencies", user.uid, "drivers"), {
           ...formData,
           createdAt: serverTimestamp(),
         });

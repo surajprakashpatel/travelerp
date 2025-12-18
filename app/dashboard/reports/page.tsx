@@ -3,6 +3,7 @@
 import { useState, useEffect, useMemo } from "react";
 import { db } from "@/libs/firebase"; // Ensure this matches your folder name (lib vs libs)
 import { collection, getDocs, query, orderBy } from "firebase/firestore";
+import {useAuth} from "@/context/AuthContext";  
 import { 
   BarChart, 
   Bar, 
@@ -33,6 +34,7 @@ export default function ReportsPage() {
   const [bills, setBills] = useState<any[]>([]);
   const [activeTab, setActiveTab] = useState<"overview" | "client" | "agent" | "trip">("overview");
   const [searchTerm, setSearchTerm] = useState("");
+  const { user } = useAuth();
 
   // Statistics State
   const [stats, setStats] = useState({
@@ -52,8 +54,9 @@ export default function ReportsPage() {
 
   const fetchReportData = async () => {
     try {
+      if (!user) return;
       setLoading(true);
-      const q = query(collection(db, "bills"), orderBy("billDate", "desc"));
+      const q = query(collection(db, "agencies", user.uid, "bills"), orderBy("billDate", "desc"));
       const querySnapshot = await getDocs(q);
       
       const fetchedBills = querySnapshot.docs.map(doc => ({

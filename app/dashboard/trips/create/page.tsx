@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { db } from "@/libs/firebase";
+import { useAuth } from "@/context/AuthContext";
 import { collection, getDocs, addDoc, serverTimestamp, query, orderBy } from "firebase/firestore";
 import { MapPin, Calendar, User, Clock, CheckCircle, ArrowLeft } from "lucide-react";
 import toast from "react-hot-toast";
@@ -15,6 +16,7 @@ export default function CreateTripPage() {
   const [clients, setClients] = useState<any[]>([]);
   const [loadingClients, setLoadingClients] = useState(true);
   const [submitting, setSubmitting] = useState(false);
+  const { user } = useAuth();
 
   // Form State
   const [formData, setFormData] = useState({
@@ -31,8 +33,9 @@ export default function CreateTripPage() {
   useEffect(() => {
     const fetchClients = async () => {
       try {
+        if (!user) return;
         // Fetch clients sorted by name for easier searching
-        const q = query(collection(db, "clients"), orderBy("name"));
+        const q = query(collection(db, "agencies", user.uid, "clients"), orderBy("name"));
         const snapshot = await getDocs(q);
         const clientList = snapshot.docs.map(doc => ({
           id: doc.id,
@@ -67,6 +70,7 @@ export default function CreateTripPage() {
     }
 
     try {
+      if (!user) return;
       // Find client name for easier display later
       const selectedClient = clients.find(c => c.id === formData.clientId);
       const clientName = selectedClient ? selectedClient.name : "Unknown";
@@ -75,7 +79,7 @@ export default function CreateTripPage() {
       const randomId = Math.floor(1000 + Math.random() * 9000);
       const tripId = `TRIP-${randomId}`;
 
-      await addDoc(collection(db, "bookings"), {
+      await addDoc(collection(db, "agencies", user.uid, "bookings"), {
         tripId: tripId,
         clientId: formData.clientId,
         clientName: clientName,

@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { db } from "@/libs/firebase";
+import {useAuth} from "@/context/AuthContext";
 import { 
   collection, 
   getDocs, 
@@ -47,6 +48,7 @@ interface Booking {
 export default function BookingsPage() {
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [loading, setLoading] = useState(true);
+  const { user } = useAuth();
   const [activeTab, setActiveTab] = useState<"Pending" | "Assigned" | "Completed">("Pending");
 
   // Assignment Modal Data
@@ -68,8 +70,9 @@ export default function BookingsPage() {
   // --- 1. Fetch Bookings ---
   const fetchBookings = async () => {
     try {
+      if (!user?.uid) return;
       setLoading(true);
-      const q = query(collection(db, "bookings"), orderBy("createdAt", "desc"));
+      const q = query(collection(db, "agencies", user.uid, "bookings"), orderBy("createdAt", "desc"));
       const snapshot = await getDocs(q);
       const list = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as Booking[];
       setBookings(list);
@@ -92,13 +95,14 @@ export default function BookingsPage() {
     
     // Load dropdown data only when needed
     if (drivers.length === 0) {
-      const dSnap = await getDocs(collection(db, "drivers"));
+      if (!user?.uid) return;
+      const dSnap = await getDocs(collection(db, "agencies", user.uid, "drivers"));
       setDrivers(dSnap.docs.map(d => ({ id: d.id, ...d.data() })));
       
-      const vSnap = await getDocs(collection(db, "vehicles"));
+      const vSnap = await getDocs(collection(db, "agencies", user.uid, "vehicles"));
       setVehicles(vSnap.docs.map(v => ({ id: v.id, ...v.data() })));
       
-      const aSnap = await getDocs(collection(db, "agents"));
+      const aSnap = await getDocs(collection(db, "agencies", user.uid, "agents"));
       setAgents(aSnap.docs.map(a => ({ id: a.id, ...a.data() })));
     }
   };

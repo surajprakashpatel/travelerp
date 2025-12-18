@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { db } from "@/libs/firebase";
+import {useAuth} from "@/context/AuthContext";
 import { 
   collection, 
   addDoc, 
@@ -28,7 +29,7 @@ export default function ClientsPage() {
   const [filteredClients, setFilteredClients] = useState<Client[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
-
+  const { user } = useAuth();
   // Modal State
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
@@ -45,8 +46,9 @@ export default function ClientsPage() {
   // --- 1. Fetch Data ---
   const fetchClients = async () => {
     try {
+      if(!user?.uid) {  return; }
       setLoading(true);
-      const querySnapshot = await getDocs(collection(db, "clients"));
+      const querySnapshot = await getDocs(collection(db, "agencies", user.uid, "clients"));
       const clientList = querySnapshot.docs.map((doc) => ({
         id: doc.id,
         ...doc.data(),
@@ -108,17 +110,18 @@ export default function ClientsPage() {
     }
 
     try {
+      if (!user?.uid) {
+        return;
+      }
       if (isEditing && currentId) {
         // Update existing
-        const clientRef = doc(db, "clients", currentId);
+        const clientRef = doc(db, "agencies", user.uid, "clients", currentId);
         await updateDoc(clientRef, { ...formData });
         toast.success("Client updated successfully");
       } else {
         // Add new
-        await addDoc(collection(db, "clients"), {
-          ...formData,
-          createdAt: serverTimestamp(),
-        });
+         const clientsRef = collection(db, "agencies", user.uid, "clients");
+        await addDoc(clientsRef, { ...formData });
         toast.success("Client added successfully");
       }
       setIsModalOpen(false);
@@ -131,9 +134,10 @@ export default function ClientsPage() {
 
   // --- 4. Delete Logic ---
   const handleDelete = async (id: string) => {
+    if (!user?.uid) { return; }
     if (!window.confirm("Are you sure you want to delete this client?")) return;
     try {
-      await deleteDoc(doc(db, "clients", id));
+      await deleteDoc(doc(db, "agencies", user.uid, "clients", id));
       toast.success("Client deleted");
       fetchClients();
     } catch (error) {

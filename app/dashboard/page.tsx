@@ -2,11 +2,13 @@
 
 import { useEffect, useState } from "react";
 import { db } from "@/libs/firebase";
+import { useAuth } from "@/context/AuthContext";
 import { collection, getDocs, query, where, orderBy, limit } from "firebase/firestore";
 import { Users, CalendarClock, Car, TrendingUp, ArrowRight } from "lucide-react";
 import Link from "next/link";
 
 export default function DashboardHome() {
+  const { user } = useAuth(); 
   const [stats, setStats] = useState({
     totalClients: 0,
     pendingBookings: 0,
@@ -19,12 +21,13 @@ export default function DashboardHome() {
   useEffect(() => {
     const fetchStats = async () => {
       try {
+        if (!user) return;
         // 1. Fetch Counts (In a real production app, use 'count()' aggregations for cost efficiency)
-        const clientsSnap = await getDocs(collection(db, "clients"));
-        const vehiclesSnap = await getDocs(collection(db, "vehicles"));
+        const clientsSnap = await getDocs(collection(db, "agencies", user.uid, "clients"));
+        const vehiclesSnap = await getDocs(collection(db, "agencies", user.uid, "vehicles"));
         
         // Fetch Bookings to filter status locally or via query
-        const bookingsRef = collection(db, "bookings");
+        const bookingsRef = collection(db, "agencies", user.uid, "bookings");
         
         // Query for Pending
         const pendingSnap = await getDocs(query(bookingsRef, where("status", "==", "Pending")));

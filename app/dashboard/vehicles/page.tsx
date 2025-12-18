@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { db } from "@/libs/firebase";
+import { useAuth } from "@/context/AuthContext";
 import { 
   collection, 
   addDoc, 
@@ -27,6 +28,7 @@ export default function VehiclesPage() {
   const [filteredVehicles, setFilteredVehicles] = useState<Vehicle[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
+  const { user } = useAuth();
   
   // Modal State
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -44,8 +46,9 @@ export default function VehiclesPage() {
   // --- Fetch Data ---
   const fetchVehicles = async () => {
     try {
+      if (!user) return;
       setLoading(true);
-      const querySnapshot = await getDocs(collection(db, "vehicles"));
+      const querySnapshot = await getDocs(collection(db, "agencies", user.uid, "vehicles"));
       const list = querySnapshot.docs.map((doc) => ({
         id: doc.id,
         ...doc.data(),
@@ -107,11 +110,12 @@ export default function VehiclesPage() {
     }
 
     try {
+      if (!user) return;
       if (isEditing && currentId) {
-        await updateDoc(doc(db, "vehicles", currentId), { ...formData });
+        await updateDoc(doc(db, "agencies", user.uid, "vehicles", currentId), { ...formData });
         toast.success("Vehicle updated");
       } else {
-        await addDoc(collection(db, "vehicles"), {
+        await addDoc(collection(db, "agencies", user.uid, "vehicles"), {
           ...formData,
           createdAt: serverTimestamp(),
         });

@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { db } from "@/libs/firebase";
+import { useAuth } from "@/context/AuthContext";
 import { 
   collection, 
   getDocs, 
@@ -34,6 +35,7 @@ export default function BillingPage() {
   const [completedTrips, setCompletedTrips] = useState<Booking[]>([]);
   const [selectedTrip, setSelectedTrip] = useState<Booking | null>(null);
   const [loading, setLoading] = useState(true);
+  const { user } = useAuth();
 
   // Billing Form State
   const [billData, setBillData] = useState({
@@ -64,10 +66,12 @@ export default function BillingPage() {
   // --- 1. Fetch Completed Trips ---
   const fetchCompletedTrips = async () => {
     try {
+       if (!user?.uid) return;
       setLoading(true);
       // Only fetch trips that are 'Completed' (not yet 'Billed')
       const q = query(
-        collection(db, "bookings"), 
+       
+        collection(db, "agencies", user.uid, "bookings"), 
         where("status", "==", "Completed"),
         orderBy("date", "desc")
       );
@@ -136,8 +140,9 @@ export default function BillingPage() {
     }
 
     try {
+      if (!user?.uid) return;
       // A. Save to Firestore 'bills' collection
-      await addDoc(collection(db, "bills"), {
+      await addDoc(collection(db, "agencies", user.uid, "bills"), {
         bookingId: selectedTrip.id,
         tripId: selectedTrip.tripId,
         clientName: selectedTrip.clientName,
