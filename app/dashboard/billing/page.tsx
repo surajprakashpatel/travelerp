@@ -153,7 +153,7 @@ export default function BillingPage() {
       });
 
       // B. Update Booking Status to 'Billed'
-      await updateDoc(doc(db, "bookings", selectedTrip.id), {
+      await updateDoc(doc(db, "agencies", user.uid, "bookings", selectedTrip.id), {
         status: "Billed"
       });
 

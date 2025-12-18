@@ -116,11 +116,12 @@ export default function BookingsPage() {
     }
 
     try {
+      if (!user?.uid) return; 
       // Find selected objects to store names (snapshot)
       const drv = drivers.find(d => d.id === assignData.driverId);
       const veh = vehicles.find(v => v.id === assignData.vehicleId);
       
-      await updateDoc(doc(db, "bookings", selectedBooking.id), {
+      await updateDoc(doc(db, "agencies", user.uid, "bookings", selectedBooking.id), {
         status: "Assigned",
         assignedDriverId: drv.id,
         assignedDriverName: drv.name,
@@ -142,9 +143,10 @@ export default function BookingsPage() {
 
   // --- 3. Action Logic ---
   const markAsCompleted = async (booking: Booking) => {
+    if (!user?.uid) return;
     if (!confirm("Are you sure this trip is finished? It will move to Billing.")) return;
     try {
-      await updateDoc(doc(db, "bookings", booking.id), { status: "Completed" });
+      await updateDoc(doc(db, "agencies", user.uid, "bookings", booking.id), { status: "Completed" });
       toast.success("Trip Completed");
       fetchBookings();
     } catch (error) {
@@ -284,7 +286,7 @@ export default function BookingsPage() {
           <div className="bg-white rounded-xl shadow-xl w-full max-w-lg overflow-hidden">
             <div className="flex justify-between items-center px-6 py-4 border-b bg-gray-50">
               <div>
-                <h2 className="text-lg font-bold">Assign Cab</h2>
+                <h2 className="text-lg text-gray-800 font-bold">Assign Cab</h2>
                 <p className="text-xs text-gray-500">Trip ID: {selectedBooking.tripId}</p>
               </div>
               <button onClick={() => setIsAssignModalOpen(false)}><X className="h-5 w-5 text-gray-400" /></button>
@@ -293,9 +295,9 @@ export default function BookingsPage() {
             <form onSubmit={handleAssignSubmit} className="p-6 space-y-4">
               {/* Driver Select */}
               <div>
-                <label className="block text-sm font-medium mb-1">Select Driver *</label>
+                <label className="block text-sm text-gray-800 font-medium mb-1">Select Driver *</label>
                 <select 
-                  className="w-full border rounded-lg px-3 py-2 bg-white"
+                  className="w-full border rounded-lg text-gray-900 px-3 py-2 bg-white"
                   value={assignData.driverId}
                   onChange={(e) => setAssignData({...assignData, driverId: e.target.value})}
                   required
@@ -309,9 +311,9 @@ export default function BookingsPage() {
 
               {/* Vehicle Select */}
               <div>
-                <label className="block text-sm font-medium mb-1">Select Vehicle *</label>
+                <label className="block text-sm text-gray-800 font-medium mb-1">Select Vehicle *</label>
                 <select 
-                  className="w-full border rounded-lg px-3 py-2 bg-white"
+                  className="w-full border rounded-lg text-gray-900 px-3 py-2 bg-white"
                   value={assignData.vehicleId}
                   onChange={(e) => setAssignData({...assignData, vehicleId: e.target.value})}
                   required
@@ -325,9 +327,9 @@ export default function BookingsPage() {
 
               {/* Agent Select */}
               <div>
-                <label className="block text-sm font-medium mb-1">Affiliated Agent (Optional)</label>
+                <label className="block text-sm text-gray-800 font-medium mb-1">Affiliated Agent (Optional)</label>
                 <select 
-                  className="w-full border rounded-lg px-3 py-2 bg-white"
+                  className="w-full border rounded-lg text-gray-900 px-3 py-2 bg-white"
                   value={assignData.agentId}
                   onChange={(e) => setAssignData({...assignData, agentId: e.target.value})}
                 >

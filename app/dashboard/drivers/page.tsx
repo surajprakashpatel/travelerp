@@ -105,7 +105,7 @@ export default function DriversPage() {
     try {
       if (!user?.uid) return;
       if (isEditing && currentId) {
-        await updateDoc(doc(db, "drivers", currentId), { ...formData });
+        await updateDoc(doc(db,"agencies", user.uid, "drivers", currentId), { ...formData });
         toast.success("Driver updated");
       } else {
         await addDoc(collection(db, "agencies", user.uid, "drivers"), {
