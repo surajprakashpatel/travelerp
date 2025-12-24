@@ -1,9 +1,18 @@
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
-import { db } from "@/libs/firebase"; // Ensure this matches your folder name (lib vs libs)
-import { collection, getDocs, query, orderBy } from "firebase/firestore";
-import {useAuth} from "@/context/AuthContext";  
+import { db } from "@/libs/firebase";
+import { useAuth } from "@/context/AuthContext";
+import { 
+  collection, 
+  getDocs, 
+  doc, 
+  updateDoc, 
+  query, 
+  orderBy,
+  arrayUnion,
+  serverTimestamp 
+} from "firebase/firestore";
 import { 
   BarChart, 
   Bar, 
@@ -21,20 +30,47 @@ import {
   AlertCircle, 
   Wallet, 
   Download, 
-  Calendar, 
   Users, 
   Briefcase, 
   Map, 
   Search,
-  LayoutDashboard
+  LayoutDashboard,
+  IndianRupee,
+  Save,
+  X
 } from "lucide-react";
+import toast from "react-hot-toast";
+
+interface Bill {
+  id: string;
+  tripId: string;
+  clientName: string;
+  agentName?: string;
+  grandTotal: number;
+  balanceDue: number;
+  advance: number;
+  dateStr: string;
+  payments?: Array<{
+    amount: number;
+    date: string;
+    note: string;
+    timestamp: number;
+  }>;
+}
 
 export default function ReportsPage() {
   const [loading, setLoading] = useState(true);
-  const [bills, setBills] = useState<any[]>([]);
+  const [bills, setBills] = useState<Bill[]>([]);
   const [activeTab, setActiveTab] = useState<"overview" | "client" | "agent" | "trip">("overview");
   const [searchTerm, setSearchTerm] = useState("");
   const { user } = useAuth();
+  
+  // Payment Modal State
+  const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
+  const [selectedBill, setSelectedBill] = useState<Bill | null>(null);
+  const [paymentAmount, setPaymentAmount] = useState("");
+  const [paymentNote, setPaymentNote] = useState("");
+  const [submittingPayment, setSubmittingPayment] = useState(false);
 
   // Statistics State
   const [stats, setStats] = useState({
@@ -42,54 +78,76 @@ export default function ReportsPage() {
     totalDue: 0,
     paidBills: 0,
     pendingBills: 0,
+    totalPaid: 0,
   });
 
   // Chart Data State
   const [revenueData, setRevenueData] = useState<any[]>([]);
   const [statusData, setStatusData] = useState<any[]>([]);
 
-  useEffect(() => {
-    fetchReportData();
-  }, []);
-
+  // Fetch Bills from Firestore
   const fetchReportData = async () => {
     try {
-      if (!user) return;
+      if (!user?.uid) return;
       setLoading(true);
-      const q = query(collection(db, "agencies", user.uid, "bills"), orderBy("billDate", "desc"));
+      
+      const q = query(
+        collection(db, "agencies", user.uid, "bills"), 
+        orderBy("billDate", "desc")
+      );
+      
       const querySnapshot = await getDocs(q);
       
-      const fetchedBills = querySnapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data(),
-        dateStr: doc.data().billDate?.toDate().toLocaleDateString() || "N/A"
-      }));
+      const fetchedBills: Bill[] = querySnapshot.docs.map(doc => {
+        const data = doc.data();
+        return {
+          id: doc.id,
+          tripId: data.tripId || "N/A",
+          clientName: data.clientName || "Unknown",
+          agentName: data.agentName || "Direct Booking",
+          grandTotal: data.grandTotal || 0,
+          balanceDue: data.balanceDue || 0,
+          advance: data.advance || 0,
+          dateStr: data.billDate?.toDate().toLocaleDateString() || "N/A",
+          payments: data.payments || []
+        };
+      });
 
       setBills(fetchedBills);
       processStats(fetchedBills);
 
     } catch (error) {
       console.error("Error fetching reports:", error);
+      toast.error("Failed to load reports");
     } finally {
       setLoading(false);
     }
   };
 
-  const processStats = (data: any[]) => {
+  useEffect(() => {
+    if (user?.uid) {
+      fetchReportData();
+    }
+  }, [user]);
+
+  const processStats = (data: Bill[]) => {
     let totalRev = 0;
     let totalDue = 0;
+    let totalPaid = 0;
     let paidCount = 0;
     let dueCount = 0;
 
     data.forEach(bill => {
       totalRev += bill.grandTotal || 0;
       totalDue += bill.balanceDue || 0;
+      totalPaid += (bill.grandTotal - bill.balanceDue) || 0;
       if (bill.balanceDue > 0) dueCount++; else paidCount++;
     });
 
     setStats({
       totalRevenue: totalRev,
       totalDue: totalDue,
+      totalPaid: totalPaid,
       paidBills: paidCount,
       pendingBills: dueCount
     });
@@ -107,15 +165,71 @@ export default function ReportsPage() {
     ]);
   };
 
-  // --- Aggregation Logic for Client/Agent Tabs ---
+  // Open Payment Modal
+  const openPaymentModal = (bill: Bill) => {
+    setSelectedBill(bill);
+    setPaymentAmount("");
+    setPaymentNote("");
+    setIsPaymentModalOpen(true);
+  };
+
+  // Handle Payment Submission
+  const handlePaymentSubmit = async () => {
+    if (!selectedBill || !user?.uid) return;
+    
+    const amount = parseFloat(paymentAmount);
+    
+    if (!amount || amount <= 0) {
+      toast.error("Please enter a valid payment amount");
+      return;
+    }
+    
+    if (amount > selectedBill.balanceDue) {
+      toast.error("Payment amount cannot exceed balance due");
+      return;
+    }
+
+    setSubmittingPayment(true);
+
+    try {
+      const newPayment = {
+        amount,
+        date: new Date().toLocaleDateString(),
+        note: paymentNote,
+        timestamp: Date.now()
+      };
+
+      const billRef = doc(db, "agencies", user.uid, "bills", selectedBill.id);
+      
+      // Update Firestore: reduce balance and add payment to array
+      await updateDoc(billRef, {
+        balanceDue: selectedBill.balanceDue - amount,
+        payments: arrayUnion(newPayment),
+        lastPaymentDate: serverTimestamp()
+      });
+
+      toast.success(`Payment of ₹${amount.toFixed(2)} recorded successfully!`);
+      
+      // Refresh data
+      await fetchReportData();
+      setIsPaymentModalOpen(false);
+
+    } catch (error) {
+      console.error("Error recording payment:", error);
+      toast.error("Failed to record payment");
+    } finally {
+      setSubmittingPayment(false);
+    }
+  };
+
+  // Aggregation Logic for Client/Agent Tabs
   const groupedData = useMemo(() => {
     if (activeTab === 'overview' || activeTab === 'trip') return [];
 
-    const field = activeTab === 'client' ? 'clientName' : 'agentName'; // Assuming agentName exists in bill
+    const field = activeTab === 'client' ? 'clientName' : 'agentName';
     const groups: Record<string, any> = {};
 
     bills.forEach(bill => {
-      // Handle missing agent names or direct bookings
       const key = bill[field] || (activeTab === 'agent' ? 'Direct Booking' : 'Unknown');
       
       if (!groups[key]) {
@@ -134,13 +248,12 @@ export default function ReportsPage() {
       groups[key].paid += (bill.grandTotal - bill.balanceDue) || 0;
     });
 
-    // Filter by search term
     return Object.values(groups).filter(item => 
       item.name.toLowerCase().includes(searchTerm.toLowerCase())
     );
   }, [bills, activeTab, searchTerm]);
 
-  // --- Filter Logic for Trip Tab ---
+  // Filter Logic for Trip Tab
   const filteredTrips = useMemo(() => {
     return bills.filter(b => 
       b.clientName.toLowerCase().includes(searchTerm.toLowerCase()) || 
@@ -148,9 +261,8 @@ export default function ReportsPage() {
     );
   }, [bills, searchTerm]);
 
-
   const exportToCSV = () => {
-    const headers = ["Bill ID,Client,Trip ID,Date,Total Amount,Paid,Due Amount,Status\n"];
+    const headers = "Bill ID,Client,Trip ID,Date,Total Amount,Paid,Due Amount,Status\n";
     const rows = bills.map(b => 
       `${b.id},${b.clientName},${b.tripId},${b.dateStr},${b.grandTotal},${b.grandTotal - b.balanceDue},${b.balanceDue},${b.balanceDue > 0 ? 'Due' : 'Paid'}`
     );
@@ -162,23 +274,33 @@ export default function ReportsPage() {
     link.setAttribute("download", `chalbo_report_${activeTab}.csv`);
     document.body.appendChild(link);
     link.click();
+    link.remove();
   };
 
-  if (loading) return <div className="p-8 text-center text-gray-500">Generating analytics...</div>;
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-96">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-500">Loading financial reports...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 p-6 bg-gray-50 min-h-screen">
       {/* Header */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
           <h1 className="text-2xl font-bold text-gray-800">Financial Reports</h1>
-          <p className="text-sm text-gray-500">Track revenue, client dues, and agent performance.</p>
+          <p className="text-sm text-gray-500">Track revenue, client dues, and payment history.</p>
         </div>
         <button 
           onClick={exportToCSV}
           className="flex items-center gap-2 bg-blue-600 text-white border border-transparent px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-700 transition shadow-sm"
         >
-          <Download className="h-4 w-4" /> Export Full Data
+          <Download className="h-4 w-4" /> Export Data
         </button>
       </div>
 
@@ -211,11 +333,11 @@ export default function ReportsPage() {
       {/* Content Area */}
       <div className="min-h-[400px]">
         
-        {/* VIEW 1: OVERVIEW (Charts) */}
+        {/* OVERVIEW */}
         {activeTab === "overview" && (
-          <div className="space-y-6 animate-in fade-in duration-300">
+          <div className="space-y-6">
             {/* Stats Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
               <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
                 <div className="flex justify-between items-start">
                   <div>
@@ -231,7 +353,19 @@ export default function ReportsPage() {
               <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
                 <div className="flex justify-between items-start">
                   <div>
-                    <p className="text-sm font-medium text-gray-500">Total Outstanding</p>
+                    <p className="text-sm font-medium text-gray-500">Total Paid</p>
+                    <h3 className="text-2xl font-bold text-green-600 mt-1">₹{stats.totalPaid.toLocaleString()}</h3>
+                  </div>
+                  <div className="p-3 bg-green-50 rounded-full text-green-600">
+                    <Wallet className="h-6 w-6" />
+                  </div>
+                </div>
+              </div>
+
+              <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+                <div className="flex justify-between items-start">
+                  <div>
+                    <p className="text-sm font-medium text-gray-500">Outstanding</p>
                     <h3 className="text-2xl font-bold text-red-600 mt-1">₹{stats.totalDue.toLocaleString()}</h3>
                   </div>
                   <div className="p-3 bg-red-50 rounded-full text-red-600">
@@ -245,9 +379,10 @@ export default function ReportsPage() {
                   <div>
                     <p className="text-sm font-medium text-gray-500">Total Bills</p>
                     <h3 className="text-2xl font-bold text-gray-800 mt-1">{bills.length}</h3>
+                    <p className="text-xs text-gray-400 mt-1">{stats.paidBills} Paid • {stats.pendingBills} Due</p>
                   </div>
-                  <div className="p-3 bg-green-50 rounded-full text-green-600">
-                    <Wallet className="h-6 w-6" />
+                  <div className="p-3 bg-purple-50 rounded-full text-purple-600">
+                    <IndianRupee className="h-6 w-6" />
                   </div>
                 </div>
               </div>
@@ -297,10 +432,10 @@ export default function ReportsPage() {
                 </div>
                 <div className="flex justify-center gap-6 mt-2">
                   <div className="flex items-center gap-2 text-sm text-gray-600">
-                    <div className="w-3 h-3 rounded-full bg-green-500"></div> Paid
+                    <div className="w-3 h-3 rounded-full bg-green-500"></div> Paid ({stats.paidBills})
                   </div>
                   <div className="flex items-center gap-2 text-sm text-gray-600">
-                    <div className="w-3 h-3 rounded-full bg-red-500"></div> Due
+                    <div className="w-3 h-3 rounded-full bg-red-500"></div> Due ({stats.pendingBills})
                   </div>
                 </div>
               </div>
@@ -308,10 +443,9 @@ export default function ReportsPage() {
           </div>
         )}
 
-        {/* VIEW 2 & 3: CLIENT / AGENT REPORT */}
+        {/* CLIENT / AGENT REPORT */}
         {(activeTab === "client" || activeTab === "agent") && (
-          <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden animate-in fade-in duration-300">
-            {/* Table Controls */}
+          <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
             <div className="p-4 border-b border-gray-100 flex flex-col sm:flex-row justify-between items-center gap-4 bg-gray-50">
               <h3 className="font-semibold text-gray-800">
                 {activeTab === "client" ? "Client Performance" : "Agent Performance"}
@@ -328,7 +462,6 @@ export default function ReportsPage() {
               </div>
             </div>
 
-            {/* Aggregated Table */}
             <div className="overflow-x-auto">
               <table className="w-full text-left text-sm text-gray-600">
                 <thead className="bg-gray-100 text-gray-700 font-semibold uppercase text-xs">
@@ -350,7 +483,7 @@ export default function ReportsPage() {
                         <td className="px-6 py-3 font-medium text-gray-900">{item.name}</td>
                         <td className="px-6 py-3 text-center">{item.count}</td>
                         <td className="px-6 py-3 text-right font-medium">₹{item.total.toLocaleString()}</td>
-                        <td className="px-6 py-3 text-right text-green-600">₹{item.paid.toLocaleString()}</td>
+                        <td className="px-6 py-3 text-right text-green-600 font-medium">₹{item.paid.toLocaleString()}</td>
                         <td className="px-6 py-3 text-right text-red-600 font-bold">₹{item.due.toLocaleString()}</td>
                         <td className="px-6 py-3 text-center">
                           <span className={`px-2 py-1 rounded-full text-xs font-medium ${
@@ -368,11 +501,11 @@ export default function ReportsPage() {
           </div>
         )}
 
-        {/* VIEW 4: TRIP WISE REPORT */}
+        {/* TRIP WISE REPORT */}
         {activeTab === "trip" && (
-          <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden animate-in fade-in duration-300">
-             <div className="p-4 border-b border-gray-100 flex flex-col sm:flex-row justify-between items-center gap-4 bg-gray-50">
-              <h3 className="font-semibold text-gray-800">Trip Transaction Log</h3>
+          <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+            <div className="p-4 border-b border-gray-100 flex flex-col sm:flex-row justify-between items-center gap-4 bg-gray-50">
+              <h3 className="font-semibold text-gray-800">Trip Transaction Log with Payment Tracking</h3>
               <div className="relative w-full sm:w-64">
                 <Search className="absolute left-3 top-2.5 h-4 w-4 text-gray-400" />
                 <input 
@@ -380,7 +513,7 @@ export default function ReportsPage() {
                   placeholder="Search Trip ID or Client..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full pl-9 pr-4 py-2 text-sm border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
+                  className="w-full pl-9 pr-4 py-2 text-sm border border-gray-300 text-gray-900 rounded-lg focus:ring-blue-500 focus:border-blue-500"
                 />
               </div>
             </div>
@@ -393,29 +526,46 @@ export default function ReportsPage() {
                     <th className="px-6 py-3">Trip ID</th>
                     <th className="px-6 py-3">Client</th>
                     <th className="px-6 py-3 text-right">Bill Amount</th>
-                    <th className="px-6 py-3 text-right">Paid</th>
-                    <th className="px-6 py-3 text-right">Due</th>
-                    <th className="px-6 py-3 text-center">Payment Status</th>
+                    <th className="px-6 py-3 text-right">Amount Paid</th>
+                    <th className="px-6 py-3 text-right">Balance Due</th>
+                    <th className="px-6 py-3 text-center">Status</th>
+                    <th className="px-6 py-3 text-center">Actions</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-100">
                   {filteredTrips.length === 0 ? (
-                    <tr><td colSpan={7} className="p-8 text-center text-gray-400">No trips found.</td></tr>
+                    <tr><td colSpan={8} className="p-8 text-center text-gray-400">No trips found.</td></tr>
                   ) : (
                     filteredTrips.map((bill) => (
                       <tr key={bill.id} className="hover:bg-gray-50">
-                        <td className="px-6 py-3">{bill.dateStr}</td>
+                        <td className="px-6 py-3 text-xs">{bill.dateStr}</td>
                         <td className="px-6 py-3 font-medium text-gray-800">{bill.tripId}</td>
                         <td className="px-6 py-3">{bill.clientName}</td>
-                        <td className="px-6 py-3 text-right">₹{bill.grandTotal.toFixed(2)}</td>
-                        <td className="px-6 py-3 text-right text-green-600">₹{(bill.grandTotal - bill.balanceDue).toFixed(2)}</td>
-                        <td className="px-6 py-3 text-right text-red-600 font-medium">₹{bill.balanceDue.toFixed(2)}</td>
+                        <td className="px-6 py-3 text-right font-medium">₹{bill.grandTotal.toFixed(2)}</td>
+                        <td className="px-6 py-3 text-right text-green-600 font-medium">
+                          ₹{(bill.grandTotal - bill.balanceDue).toFixed(2)}
+                        </td>
+                        <td className="px-6 py-3 text-right text-red-600 font-bold">₹{bill.balanceDue.toFixed(2)}</td>
                         <td className="px-6 py-3 text-center">
                           <span className={`px-2 py-1 rounded-full text-xs font-medium ${
                             bill.balanceDue > 0 ? "bg-red-100 text-red-700" : "bg-green-100 text-green-700"
                           }`}>
                             {bill.balanceDue > 0 ? "Due" : "Paid"}
                           </span>
+                        </td>
+                        <td className="px-6 py-3 text-center">
+                          {bill.balanceDue > 0 ? (
+                            <button 
+                              onClick={() => openPaymentModal(bill)}
+                              className="flex items-center gap-1 mx-auto text-xs bg-blue-600 text-white px-3 py-1.5 rounded hover:bg-blue-700 transition"
+                              title="Record Payment"
+                            >
+                              <IndianRupee className="h-3 w-3" />
+                              Add Payment
+                            </button>
+                          ) : (
+                            <span className="text-xs text-gray-400">Fully Paid</span>
+                          )}
                         </td>
                       </tr>
                     ))
@@ -425,8 +575,134 @@ export default function ReportsPage() {
             </div>
           </div>
         )}
-
       </div>
+
+      {/* Payment Modal */}
+      {isPaymentModalOpen && selectedBill && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 p-4">
+          <div className="bg-white rounded-xl shadow-xl w-full max-w-md">
+            <div className="flex justify-between items-center px-6 py-4 border-b bg-blue-50">
+              <div>
+                <h2 className="text-lg font-bold text-gray-800 flex items-center gap-2">
+                  <IndianRupee className="h-5 w-5 text-blue-600" />
+                  Record Payment
+                </h2>
+                <p className="text-xs text-gray-500 mt-0.5">Trip: {selectedBill.tripId} • {selectedBill.clientName}</p>
+              </div>
+              <button 
+                onClick={() => setIsPaymentModalOpen(false)} 
+                className="text-gray-400 hover:text-gray-600"
+                disabled={submittingPayment}
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+            
+            <div className="p-6 space-y-4">
+              {/* Bill Summary */}
+              <div className="bg-gray-50 p-4 rounded-lg space-y-2 text-sm">
+                <div className="flex justify-between">
+                  <span className="text-gray-600">Total Bill Amount:</span>
+                  <span className="font-semibold text-gray-900">₹{selectedBill.grandTotal.toFixed(2)}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-600">Already Paid:</span>
+                  <span className="font-semibold text-green-600">₹{(selectedBill.grandTotal - selectedBill.balanceDue).toFixed(2)}</span>
+                </div>
+                <div className="flex justify-between pt-2 border-t border-gray-200">
+                  <span className="text-gray-600 font-medium">Balance Due:</span>
+                  <span className="font-bold text-red-600 text-lg">₹{selectedBill.balanceDue.toFixed(2)}</span>
+                </div>
+              </div>
+
+              {/* Payment History */}
+              {selectedBill.payments && selectedBill.payments.length > 0 && (
+                <div className="border border-gray-200 rounded-lg p-3">
+                  <h4 className="text-xs font-semibold text-gray-700 mb-2 uppercase">Payment History</h4>
+                  <div className="space-y-1.5 max-h-32 overflow-y-auto">
+                    {selectedBill.payments.map((payment, idx) => (
+                      <div key={idx} className="flex justify-between items-center text-xs bg-gray-50 p-2 rounded">
+                        <div>
+                          <span className="font-medium text-gray-900">₹{payment.amount.toFixed(2)}</span>
+                          {payment.note && <span className="text-gray-500 ml-2">• {payment.note}</span>}
+                        </div>
+                        <span className="text-gray-400">{payment.date}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Payment Input */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Payment Amount *
+                </label>
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <IndianRupee className="h-4 w-4 text-gray-400" />
+                  </div>
+                  <input
+                    type="number"
+                    step="0.01"
+                    min="0.01"
+                    max={selectedBill.balanceDue}
+                    className="w-full pl-9 pr-3 py-2 border border-gray-300 text-gray-900 rounded-lg focus:ring-blue-500 focus:border-blue-500"
+                    placeholder="Enter amount"
+                    value={paymentAmount}
+                    onChange={(e) => setPaymentAmount(e.target.value)}
+                    disabled={submittingPayment}
+                  />
+                </div>
+                <p className="text-xs text-gray-500 mt-1">Maximum: ₹{selectedBill.balanceDue.toFixed(2)}</p>
+              </div>
+
+              {/* Payment Note */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Payment Note (Optional)
+                </label>
+                <input
+                  type="text"
+                  className="w-full px-3 py-2 border border-gray-300 text-gray-900 rounded-lg focus:ring-blue-500 focus:border-blue-500"
+                  placeholder="e.g., Cash, UPI, Cheque #12345"
+                  value={paymentNote}
+                  onChange={(e) => setPaymentNote(e.target.value)}
+                  disabled={submittingPayment}
+                />
+              </div>
+
+              {/* Action Buttons */}
+              <div className="flex gap-3 pt-2">
+                <button
+                  onClick={() => setIsPaymentModalOpen(false)}
+                  className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition"
+                  disabled={submittingPayment}
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handlePaymentSubmit}
+                  className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition font-medium flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                  disabled={submittingPayment}
+                >
+                  {submittingPayment ? (
+                    <>
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                      Processing...
+                    </>
+                  ) : (
+                    <>
+                      <Save className="h-4 w-4" />
+                      Save Payment
+                    </>
+                  )}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
