@@ -99,20 +99,25 @@ export default function ReportsPage() {
       const querySnapshot = await getDocs(q);
       
       const fetchedBills: Bill[] = querySnapshot.docs.map(doc => {
-        const data = doc.data();
-        return {
-          id: doc.id,
-          tripId: data.tripId || "N/A",
-          clientName: data.clientName || "Unknown",
-          agentName: data.agentName || "Direct Booking",
-          grandTotal: data.grandTotal || 0,
-          balanceDue: data.balanceDue || 0,
-          advance: data.advance || 0,
-          dateStr: data.billDate?.toDate().toLocaleDateString() || "N/A",
-          payments: data.payments || []
-        };
-      });
+  const data = doc.data();
+  // Safe Date conversion
+  const dateObj = data.billDate && typeof data.billDate.toDate === 'function' 
+    ? data.billDate.toDate() 
+    : new Date();
 
+  return {
+    id: doc.id,
+    tripId: data.tripId || "N/A",
+    clientName: data.clientName || "Unknown",
+    agentName: data.agentName || "Direct Booking",
+    grandTotal: data.grandTotal || 0,
+    balanceDue: data.balanceDue || 0,
+    advance: data.advance || 0,
+    status: data.status || "Due", // Add this to your Interface
+    dateStr: dateObj.toLocaleDateString(),
+    payments: data.payments || []
+  };
+});
       setBills(fetchedBills);
       processStats(fetchedBills);
 
@@ -173,54 +178,48 @@ export default function ReportsPage() {
     setIsPaymentModalOpen(true);
   };
 
-  // Handle Payment Submission
-  const handlePaymentSubmit = async () => {
-    if (!selectedBill || !user?.uid) return;
+ const handlePaymentSubmit = async () => {
+  if (!selectedBill || !user?.uid) return;
+  
+  const amount = parseFloat(paymentAmount);
+  if (!amount || amount <= 0 || amount > selectedBill.balanceDue) {
+    toast.error("Invalid payment amount");
+    return;
+  }
+
+  setSubmittingPayment(true);
+
+  try {
+    const newBalance = selectedBill.balanceDue - amount;
+    // Determine if status should change
+    const newStatus = newBalance <= 0 ? "Paid" : "Due";
+
+    const newPayment = {
+      amount,
+      date: new Date().toLocaleDateString(),
+      note: paymentNote,
+      timestamp: Date.now()
+    };
+
+    const billRef = doc(db, "agencies", user.uid, "bills", selectedBill.id);
     
-    const amount = parseFloat(paymentAmount);
-    
-    if (!amount || amount <= 0) {
-      toast.error("Please enter a valid payment amount");
-      return;
-    }
-    
-    if (amount > selectedBill.balanceDue) {
-      toast.error("Payment amount cannot exceed balance due");
-      return;
-    }
+    await updateDoc(billRef, {
+      balanceDue: newBalance,
+      status: newStatus, // Sync status with the financial reality
+      payments: arrayUnion(newPayment),
+      lastPaymentDate: serverTimestamp()
+    });
 
-    setSubmittingPayment(true);
-
-    try {
-      const newPayment = {
-        amount,
-        date: new Date().toLocaleDateString(),
-        note: paymentNote,
-        timestamp: Date.now()
-      };
-
-      const billRef = doc(db, "agencies", user.uid, "bills", selectedBill.id);
-      
-      // Update Firestore: reduce balance and add payment to array
-      await updateDoc(billRef, {
-        balanceDue: selectedBill.balanceDue - amount,
-        payments: arrayUnion(newPayment),
-        lastPaymentDate: serverTimestamp()
-      });
-
-      toast.success(`Payment of ₹${amount.toFixed(2)} recorded successfully!`);
-      
-      // Refresh data
-      await fetchReportData();
-      setIsPaymentModalOpen(false);
-
-    } catch (error) {
-      console.error("Error recording payment:", error);
-      toast.error("Failed to record payment");
-    } finally {
-      setSubmittingPayment(false);
-    }
-  };
+    toast.success(`Payment recorded! Status: ${newStatus}`);
+    await fetchReportData();
+    setIsPaymentModalOpen(false);
+  } catch (error) {
+    console.error(error);
+    toast.error("Failed to record payment");
+  } finally {
+    setSubmittingPayment(false);
+  }
+};
 
   // Aggregation Logic for Client/Agent Tabs
   const groupedData = useMemo(() => {

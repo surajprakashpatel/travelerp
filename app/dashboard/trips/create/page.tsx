@@ -57,6 +57,37 @@ export default function CreateTripPage() {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
   };
+  const [timeUI, setTimeUI] = useState({
+  hour: "12",
+  minute: "00",
+  period: "AM",
+});
+
+// 2. Helper to convert 12h components to 24h string
+const update24HourTime = (hour: string, minute: string, period: string) => {
+  let h = parseInt(hour);
+  if (period === "PM" && h < 12) h += 12;
+  if (period === "AM" && h === 12) h = 0;
+  
+  const formattedTime = `${h.toString().padStart(2, "0")}:${minute}`;
+  
+  // Sync with your existing formData
+  setFormData(prev => ({ ...prev, startTime: formattedTime }));
+};
+
+// 3. Handle dropdown changes
+const handleTimeUIChange = (name: string, value: string) => {
+  const newTime = { ...timeUI, [name]: value };
+  setTimeUI(newTime);
+  update24HourTime(newTime.hour, newTime.minute, newTime.period);
+};
+
+// 4. Initialize the startTime on first load if it's empty
+useEffect(() => {
+    if (!formData.startTime) {
+        update24HourTime(timeUI.hour, timeUI.minute, timeUI.period);
+    }
+}, []);
 
   // 3. Submit Trip
   const handleSubmit = async (e: React.FormEvent) => {
@@ -224,19 +255,45 @@ export default function CreateTripPage() {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Pickup Time *</label>
-              <div className="relative">
-                <Clock className="absolute left-3 top-2.5 h-4 w-4 text-gray-400" />
-                <input
-                  type="time"
-                  name="startTime"
-                  value={formData.startTime}
-                  onChange={handleChange}
-                  required
-                  className="w-full border text-gray-900 border-gray-300 rounded-lg pl-10 pr-3 py-2 focus:ring-blue-500 focus:border-blue-500"
-                />
-              </div>
-            </div>
+  <label className="block text-sm font-medium text-gray-700 mb-1">Pickup Time *</label>
+  <div className="flex gap-2">
+    {/* Hour Select */}
+    <select
+      value={timeUI.hour}
+      onChange={(e) => handleTimeUIChange("hour", e.target.value)}
+      className="w-full border text-gray-900 border-gray-300 rounded-lg px-2 py-2 focus:ring-blue-500 focus:border-blue-500 bg-white"
+    >
+      {Array.from({ length: 12 }, (_, i) => i + 1).map((h) => (
+        <option key={h} value={h.toString().padStart(2, "0")}>
+          {h.toString().padStart(2, "0")}
+        </option>
+      ))}
+    </select>
+
+    {/* Minute Select */}
+    <select
+      value={timeUI.minute}
+      onChange={(e) => handleTimeUIChange("minute", e.target.value)}
+      className="w-full border text-gray-900 border-gray-300 rounded-lg px-2 py-2 focus:ring-blue-500 focus:border-blue-500 bg-white"
+    >
+      {["00", "05", "10", "15", "20", "25", "30", "35", "40", "45", "50", "55"].map((m) => (
+        <option key={m} value={m}>
+          {m}
+        </option>
+      ))}
+    </select>
+
+    {/* AM/PM Select */}
+    <select
+      value={timeUI.period}
+      onChange={(e) => handleTimeUIChange("period", e.target.value)}
+      className="w-full border text-gray-900 border-gray-300 rounded-lg px-2 py-2 focus:ring-blue-500 focus:border-blue-500 bg-white"
+    >
+      <option value="AM">AM</option>
+      <option value="PM">PM</option>
+    </select>
+  </div>
+</div>
           </div>
         </div>
 

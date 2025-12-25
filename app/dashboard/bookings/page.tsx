@@ -19,6 +19,7 @@ import {
   User, 
   MapPin, 
   Phone, 
+  StickyNote,
   MessageCircle, 
   X,
   FileCheck
@@ -35,7 +36,7 @@ interface Booking {
   drop: string;
   date: string;
   time: string;
-  status: "Pending" | "Assigned" | "Completed" | "Cancelled";
+  status: "Pending" | "Assigned" | "Completed" | "Cancelled" | "Billed";
   assignedDriverId?: string;
   assignedDriverName?: string;
   assignedDriverMobile?: string;
@@ -43,13 +44,14 @@ interface Booking {
   assignedVehicleNumber?: string;
   assignedVehicleModel?: string;
   assignedAgentId?: string;
+   notes?: string;
 }
 
 export default function BookingsPage() {
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [loading, setLoading] = useState(true);
   const { user } = useAuth();
-  const [activeTab, setActiveTab] = useState<"Pending" | "Assigned" | "Completed">("Pending");
+const [activeTab, setActiveTab] = useState<"Pending" | "Assigned" | "Completed" | "Cancelled" | "Billed">("Pending");
 
   // Assignment Modal Data
   const [isAssignModalOpen, setIsAssignModalOpen] = useState(false);
@@ -141,6 +143,19 @@ export default function BookingsPage() {
     }
   };
 
+  const cancelBooking = async (booking: Booking) => {
+  if (!user?.uid) return;
+  if (!confirm("Are you sure you want to cancel this booking?")) return;
+  try {
+    await updateDoc(doc(db, "agencies", user.uid, "bookings", booking.id), { 
+      status: "Cancelled" 
+    });
+    toast.success("Booking Cancelled");
+    fetchBookings();
+  } catch (error) {
+    toast.error("Cancellation failed");
+  }
+};
   // --- 3. Action Logic ---
   const markAsCompleted = async (booking: Booking) => {
     if (!user?.uid) return;
@@ -177,21 +192,21 @@ export default function BookingsPage() {
       <h1 className="text-2xl font-bold text-gray-800">Booking Management</h1>
 
       {/* Tabs */}
-      <div className="flex space-x-2 border-b border-gray-200">
-        {["Pending", "Assigned", "Completed"].map((tab) => (
-          <button
-            key={tab}
-            onClick={() => setActiveTab(tab as any)}
-            className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
-              activeTab === tab
-                ? "border-blue-600 text-blue-600"
-                : "border-transparent text-gray-500 hover:text-gray-700"
-            }`}
-          >
-            {tab}
-          </button>
-        ))}
-      </div>
+     <div className="flex space-x-2 border-b border-gray-200 overflow-x-auto">
+  {["Pending", "Assigned", "Completed", "Cancelled", "Billed"].map((tab) => (
+    <button
+      key={tab}
+      onClick={() => setActiveTab(tab as any)}
+      className={`px-4 py-2 text-sm font-medium border-b-2 whitespace-nowrap transition-colors ${
+        activeTab === tab
+          ? "border-blue-600 text-blue-600"
+          : "border-transparent text-gray-500 hover:text-gray-700"
+      }`}
+    >
+      {tab}
+    </button>
+  ))}
+</div>
 
       {/* List */}
       <div className="space-y-4">
@@ -223,7 +238,12 @@ export default function BookingsPage() {
                      <CalendarClock className="h-4 w-4 text-orange-500" />
                      {booking.date} @ {booking.time}
                   </div>
-                  
+                    {booking.notes && (
+      <div className="col-span-1 md:col-span-2 mt-2 p-2 bg-amber-50 border border-amber-100 rounded-lg flex items-start gap-2 text-amber-900 text-xs">
+        <StickyNote className="h-3.5 w-3.5 mt-0.5 text-amber-600 flex-shrink-0" />
+        <p><span className="font-bold uppercase text-[10px]">Notes:</span> {booking.notes}</p>
+      </div>
+    )}
                   {booking.status !== "Pending" && (
                     <div className="col-span-1 md:col-span-2 flex items-center gap-2 mt-2 pt-2 border-t border-gray-50 text-blue-700 bg-blue-50 p-2 rounded">
                       <Car className="h-4 w-4" />
@@ -239,15 +259,23 @@ export default function BookingsPage() {
               {/* Actions */}
               <div className="flex items-center gap-2">
                 
-                {/* Pending Actions */}
-                {booking.status === "Pending" && (
-                  <button 
-                    onClick={() => openAssignModal(booking)}
-                    className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-blue-700 shadow-sm"
-                  >
-                    <CheckCircle2 className="h-4 w-4" /> Assign Cab
-                  </button>
-                )}
+               {booking.status === "Pending" && (
+    <>
+      <button 
+        onClick={() => openAssignModal(booking)}
+        className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-blue-700 shadow-sm"
+      >
+        <CheckCircle2 className="h-4 w-4" /> Assign
+      </button>
+      <button 
+        onClick={() => cancelBooking(booking)}
+        className="flex items-center gap-2 bg-white text-red-600 border border-red-200 px-4 py-2 rounded-lg text-sm hover:bg-red-50"
+      >
+        <X className="h-4 w-4" /> Cancel
+      </button>
+    </>
+  )}
+  
 
                 {/* Assigned Actions */}
                 {booking.status === "Assigned" && (
@@ -274,7 +302,17 @@ export default function BookingsPage() {
                     <CheckCircle2 className="h-4 w-4" /> Ready for Bill
                   </span>
                 )}
-              </div>
+                {booking.status === "Cancelled" && (
+    <span className="text-sm font-medium text-red-600 bg-red-50 px-3 py-1 rounded-full border border-red-100">
+      Cancelled
+    </span>
+  )}
+    {booking.status === "Billed" && (
+    <span className="text-sm font-medium text-purple-600 bg-purple-50 px-3 py-1 rounded-full border border-purple-100">
+      Billed & Closed
+    </span>
+  )}
+         </div>
             </div>
           ))
         )}
