@@ -407,7 +407,7 @@ export default function ReportsPage() {
                 <div className="group">
                   <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Notes</label>
                   <input 
-                    type="text" className="w-full bg-gray-50 border-0 rounded-2xl py-5 px-6 font-bold focus:ring-2 focus:ring-blue-600"
+                    type="text" className="w-full bg-gray-50 border-0 text-gray-700 rounded-2xl py-5 px-6 font-bold focus:ring-2 focus:ring-blue-600"
                     placeholder="Cash / UPI / Ref #" value={paymentNote} onChange={(e) => setPaymentNote(e.target.value)}
                   />
                 </div>
