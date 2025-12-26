@@ -32,23 +32,28 @@ import {
   Download, 
   Users, 
   Briefcase, 
-  Map, 
+  Map as MapIcon, 
   Search,
   LayoutDashboard,
   IndianRupee,
   Save,
-  X
+  X,
+  Car,     
+  User 
 } from "lucide-react";
 import toast from "react-hot-toast";
 
 interface Bill {
   id: string;
   tripId: string;
+  bookingId?: string;  
   clientName: string;
   agentName?: string;
   grandTotal: number;
   balanceDue: number;
   advance: number;
+  vehicleNumber?: string; 
+  driverName?: string; 
   dateStr: string;
   payments?: Array<{
     amount: number;
@@ -61,7 +66,7 @@ interface Bill {
 export default function ReportsPage() {
   const [loading, setLoading] = useState(true);
   const [bills, setBills] = useState<Bill[]>([]);
-  const [activeTab, setActiveTab] = useState<"overview" | "client" | "agent" | "trip">("overview");
+const [activeTab, setActiveTab] = useState<"overview" | "client" | "agent" | "trip" | "vehicle" | "driver">("overview");
   const [searchTerm, setSearchTerm] = useState("");
   const { user } = useAuth();
   
@@ -87,48 +92,64 @@ export default function ReportsPage() {
 
   // Fetch Bills from Firestore
   const fetchReportData = async () => {
-    try {
-      if (!user?.uid) return;
-      setLoading(true);
-      
-      const q = query(
-        collection(db, "agencies", user.uid, "bills"), 
-        orderBy("billDate", "desc")
-      );
-      
-      const querySnapshot = await getDocs(q);
-      
-      const fetchedBills: Bill[] = querySnapshot.docs.map(doc => {
-  const data = doc.data();
-  // Safe Date conversion
-  const dateObj = data.billDate && typeof data.billDate.toDate === 'function' 
-    ? data.billDate.toDate() 
-    : new Date();
+  try {
+    if (!user?.uid) return;
+    setLoading(true);
+    
+    // Fetch bills
+    const billsQuery = query(
+      collection(db, "agencies", user.uid, "bills"), 
+      orderBy("billDate", "desc")
+    );
+    const billsSnapshot = await getDocs(billsQuery);
+    
+    // Fetch all bookings
+    const bookingsQuery = collection(db, "agencies", user.uid, "bookings");
+    const bookingsSnapshot = await getDocs(bookingsQuery);
+    
+    // Create a map of bookingId -> booking data for quick lookup
+    const bookingsMap = new Map();
+    bookingsSnapshot.docs.forEach(doc => {
+      bookingsMap.set(doc.id, doc.data());
+    });
+    
+    // Map bills and enrich with booking data
+    const fetchedBills: Bill[] = billsSnapshot.docs.map(doc => {
+      const data = doc.data();
+      const dateObj = data.billDate && typeof data.billDate.toDate === 'function' 
+        ? data.billDate.toDate() 
+        : new Date();
 
-  return {
-    id: doc.id,
-    tripId: data.tripId || "N/A",
-    clientName: data.clientName || "Unknown",
-    agentName: data.agentName || "Direct Booking",
-    grandTotal: data.grandTotal || 0,
-    balanceDue: data.balanceDue || 0,
-    advance: data.advance || 0,
-    status: data.status || "Due", // Add this to your Interface
-    dateStr: dateObj.toLocaleDateString(),
-    payments: data.payments || []
-  };
-});
-      setBills(fetchedBills);
-      processStats(fetchedBills);
+      const bookingId = data.bookingId;
+      const bookingData = bookingId ? bookingsMap.get(bookingId) : null;
 
-    } catch (error) {
-      console.error("Error fetching reports:", error);
-      toast.error("Failed to load reports");
-    } finally {
-      setLoading(false);
-    }
-  };
+      return {
+        id: doc.id,
+        tripId: data.tripId || "N/A",
+        bookingId: bookingId || null,
+        clientName: data.clientName || "Unknown",
+        agentName: data.agentName || "Direct Booking",
+        vehicleNumber: bookingData?.assignedVehicleNumber || "N/A",
+        driverName: bookingData?.assignedDriverName || "N/A",
+        grandTotal: data.grandTotal || 0,
+        balanceDue: data.balanceDue || 0,
+        advance: data.advance || 0,
+        status: data.status || "Due",
+        dateStr: dateObj.toLocaleDateString(),
+        payments: data.payments || []
+      };
+    });
+    
+    setBills(fetchedBills);
+    processStats(fetchedBills);
 
+  } catch (error) {
+    console.error("Error fetching reports:", error);
+    toast.error("Failed to load reports");
+  } finally {
+    setLoading(false);
+  }
+};
   useEffect(() => {
     if (user?.uid) {
       fetchReportData();
@@ -221,36 +242,41 @@ export default function ReportsPage() {
   }
 };
 
-  // Aggregation Logic for Client/Agent Tabs
-  const groupedData = useMemo(() => {
-    if (activeTab === 'overview' || activeTab === 'trip') return [];
+ const groupedData = useMemo(() => {
+  if (activeTab === 'overview' || activeTab === 'trip') return [];
 
-    const field = activeTab === 'client' ? 'clientName' : 'agentName';
-    const groups: Record<string, any> = {};
+  let field: keyof Bill;
+  if (activeTab === 'client') field = 'clientName';
+  else if (activeTab === 'agent') field = 'agentName';
+  else if (activeTab === 'vehicle') field = 'vehicleNumber'; 
+  else if (activeTab === 'driver') field = 'driverName';     
+  else field = 'clientName';
 
-    bills.forEach(bill => {
-      const key = bill[field] || (activeTab === 'agent' ? 'Direct Booking' : 'Unknown');
-      
-      if (!groups[key]) {
-        groups[key] = { 
-          name: key, 
-          count: 0, 
-          total: 0, 
-          due: 0, 
-          paid: 0 
-        };
-      }
-      
-      groups[key].count += 1;
-      groups[key].total += bill.grandTotal || 0;
-      groups[key].due += bill.balanceDue || 0;
-      groups[key].paid += (bill.grandTotal - bill.balanceDue) || 0;
-    });
+  const groups: Record<string, any> = {};
 
-    return Object.values(groups).filter(item => 
-      item.name.toLowerCase().includes(searchTerm.toLowerCase())
-    );
-  }, [bills, activeTab, searchTerm]);
+  bills.forEach(bill => {
+    const key = bill[field] || (activeTab === 'agent' ? 'Direct Booking' : 'N/A');
+    
+    if (!groups[key]) {
+      groups[key] = { 
+        name: key, 
+        count: 0, 
+        total: 0, 
+        due: 0, 
+        paid: 0 
+      };
+    }
+    
+    groups[key].count += 1;
+    groups[key].total += bill.grandTotal || 0;
+    groups[key].due += bill.balanceDue || 0;
+    groups[key].paid += (bill.grandTotal - bill.balanceDue) || 0;
+  });
+
+  return Object.values(groups).filter(item => 
+    item.name.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+}, [bills, activeTab, searchTerm]);
 
   // Filter Logic for Trip Tab
   const filteredTrips = useMemo(() => {
@@ -309,7 +335,9 @@ export default function ReportsPage() {
           { id: "overview", label: "Overview", icon: LayoutDashboard },
           { id: "client", label: "Client Report", icon: Users },
           { id: "agent", label: "Agent Report", icon: Briefcase },
-          { id: "trip", label: "Trip Wise", icon: Map },
+          { id: "vehicle", label: "Vehicle Report", icon: Car },      
+          { id: "driver", label: "Driver Report", icon: User },    
+          { id: "trip", label: "Trip Wise", icon: MapIcon},
         ].map((tab) => {
           const Icon = tab.icon;
           return (
@@ -442,13 +470,16 @@ export default function ReportsPage() {
           </div>
         )}
 
-        {/* CLIENT / AGENT REPORT */}
-        {(activeTab === "client" || activeTab === "agent") && (
+      
+        {(activeTab === "client" || activeTab === "agent" || activeTab === "vehicle" || activeTab === "driver") && (
           <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
             <div className="p-4 border-b border-gray-100 flex flex-col sm:flex-row justify-between items-center gap-4 bg-gray-50">
-              <h3 className="font-semibold text-gray-800">
-                {activeTab === "client" ? "Client Performance" : "Agent Performance"}
-              </h3>
+            <h3 className="font-semibold text-gray-800">
+  {activeTab === "client" ? "Client Performance" : 
+   activeTab === "agent" ? "Agent Performance" :
+   activeTab === "vehicle" ? "Vehicle Performance" :
+   "Driver Performance"}
+</h3>
               <div className="relative w-full sm:w-64">
                 <Search className="absolute left-3 top-2.5 h-4 w-4 text-gray-400" />
                 <input 
@@ -465,7 +496,10 @@ export default function ReportsPage() {
               <table className="w-full text-left text-sm text-gray-600">
                 <thead className="bg-gray-100 text-gray-700 font-semibold uppercase text-xs">
                   <tr>
-                    <th className="px-6 py-3">{activeTab === "client" ? "Client Name" : "Agent Name"}</th>
+                    <th className="px-6 py-3"> {activeTab === "client" ? "Client Name" : 
+   activeTab === "agent" ? "Agent Name" :
+   activeTab === "vehicle" ? "Vehicle Number" :
+   "Driver Name"}</th>
                     <th className="px-6 py-3 text-center">Total Trips</th>
                     <th className="px-6 py-3 text-right">Total Billed</th>
                     <th className="px-6 py-3 text-right">Total Paid</th>

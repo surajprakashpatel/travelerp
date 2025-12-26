@@ -1,11 +1,11 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect,  useRef} from "react";
 import { useRouter } from "next/navigation";
 import { db } from "@/libs/firebase";
 import { useAuth } from "@/context/AuthContext";
 import { collection, getDocs, addDoc, serverTimestamp, query, orderBy } from "firebase/firestore";
-import { MapPin, Calendar, User, Clock, CheckCircle, ArrowLeft } from "lucide-react";
+import { MapPin, Calendar, User, Clock, CheckCircle, ArrowLeft ,Search, Check } from "lucide-react";
 import toast from "react-hot-toast";
 import Link from "next/link";
 
@@ -18,6 +18,9 @@ export default function CreateTripPage() {
   const [submitting, setSubmitting] = useState(false);
   const { user } = useAuth();
 
+const [searchTerm, setSearchTerm] = useState("");
+  const [isOpen, setIsOpen] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
   // Form State
   const [formData, setFormData] = useState({
     clientId: "",
@@ -51,6 +54,32 @@ export default function CreateTripPage() {
     };
     fetchClients();
   }, []);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setIsOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  // 3. Filtered Clients Logic
+  const filteredClients = clients.filter(client => 
+    client.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    client.mobile.includes(searchTerm)
+  );
+
+  // Get selected client name for the input field display
+  const selectedClient = clients.find(c => c.id === formData.clientId);
+
+  const handleSelectClient = (client: any) => {
+    setFormData(prev => ({ ...prev, clientId: client.id }));
+    setSearchTerm(""); // Clear search after selection
+    setIsOpen(false);
+  };
+
 
   // 2. Handle Input Changes
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
@@ -162,28 +191,59 @@ useEffect(() => {
           </h2>
           
           <div className="grid md:grid-cols-2 gap-6">
-            <div className="col-span-2 md:col-span-1">
+            {/* Searchable Client Dropdown */}
+            <div className="col-span-2 md:col-span-1 relative" ref={dropdownRef}>
               <label className="block text-sm font-medium text-gray-700 mb-1">Select Client *</label>
-              {loadingClients ? (
-                <div className="text-sm text-gray-400">Loading clients...</div>
-              ) : (
-                <select
-                  name="clientId"
-                  value={formData.clientId}
-                  onChange={handleChange}
-                  required
-                  className="w-full border text-gray-900 border-gray-300 rounded-lg px-3 py-2.5 focus:ring-blue-500 focus:border-blue-500 bg-white"
+              
+              <div className="relative">
+                <div 
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2.5 bg-white flex items-center justify-between cursor-pointer focus-within:ring-2 focus-within:ring-blue-500"
+                  onClick={() => setIsOpen(!isOpen)}
                 >
-                  <option value="">-- Choose a Client --</option>
-                  {clients.map(client => (
-                    <option key={client.id} value={client.id}>
-                      {client.name} ({client.mobile})
-                    </option>
-                  ))}
-                </select>
-              )}
+                  <span className={`${selectedClient ? "text-gray-900" : "text-gray-400"}`}>
+                    {selectedClient ? `${selectedClient.name} (${selectedClient.mobile})` : "Search by name or mobile..."}
+                  </span>
+                  <Search className="h-4 w-4 text-gray-400" />
+                </div>
+
+                {isOpen && (
+                  <div className="absolute z-50 mt-1 w-full bg-white border border-gray-200 rounded-lg shadow-xl overflow-hidden">
+                    <div className="p-2 border-b">
+                      <input
+                        autoFocus
+                        type="text"
+                        placeholder="Type to search..."
+                        className="w-full px-3 py-2 text-sm border-none focus:ring-0 outline-none text-gray-900"
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                      />
+                    </div>
+                    <div className="max-h-60 overflow-y-auto">
+                      {loadingClients ? (
+                        <div className="p-4 text-center text-sm text-gray-500">Loading...</div>
+                      ) : filteredClients.length > 0 ? (
+                        filteredClients.map((client) => (
+                          <div
+                            key={client.id}
+                            className={`px-4 py-3 hover:bg-blue-50 cursor-pointer flex items-center justify-between border-b border-gray-50 last:border-0 ${formData.clientId === client.id ? "bg-blue-50" : ""}`}
+                            onClick={() => handleSelectClient(client)}
+                          >
+                            <div>
+                              <div className="text-sm font-medium text-gray-900">{client.name}</div>
+                              <div className="text-xs text-gray-500">{client.mobile}</div>
+                            </div>
+                            {formData.clientId === client.id && <Check className="h-4 w-4 text-blue-600" />}
+                          </div>
+                        ))
+                      ) : (
+                        <div className="p-4 text-center text-sm text-gray-500">No clients found</div>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
               <p className="text-xs text-gray-400 mt-1">
-                Don't see the client? <Link href="/dashboard/clients" className="text-blue-600 hover:underline">Add new client here</Link>
+                Don't see the client? <Link href="/dashboard/clients" className="text-blue-600 hover:underline">Add new client</Link>
               </p>
             </div>
 
@@ -198,7 +258,7 @@ useEffect(() => {
                 <option value="One Way">One Way</option>
                 <option value="Round Trip">Round Trip</option>
                 <option value="Rental (8hr/80km)">Rental (8hr/80km)</option>
-                <option value="Rental (12hr/300km)">Rental (12hr/120km)</option>
+                <option value="Rental (12hr/120km)">Rental (12hr/120km)</option>
                 <option value="Outstation">Outstation</option>
               </select>
             </div>
