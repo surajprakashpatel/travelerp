@@ -13,12 +13,14 @@ import {
   where 
 } from "firebase/firestore";
 import { 
+   MapPin, 
   CalendarClock, 
-  CheckCircle2, 
   Car, 
   User, 
-  MapPin, 
-  Phone, 
+  CheckCircle2, 
+  MoreVertical,
+  Phone,
+  ArrowRight,
   StickyNote,
   MessageCircle, 
   X,
@@ -185,202 +187,237 @@ const [activeTab, setActiveTab] = useState<"Pending" | "Assigned" | "Completed" 
   };
 
   // --- Filter Logic ---
-  const filteredBookings = bookings.filter(b => b.status === activeTab);
+  const filteredBookings = bookings.filter(b => b.status === activeTab)
+
 
   return (
-    <div className="space-y-6">
-      <h1 className="text-2xl font-bold text-gray-800">Booking Management</h1>
+    <div className="space-y-4 md:space-y-6 pb-20">
+      {/* --- Mobile Header --- */}
+      <div className="flex items-center justify-between">
+        <h1 className="text-xl md:text-2xl font-black text-gray-900">Bookings</h1>
+        <div className="md:hidden bg-blue-100 text-blue-700 px-3 py-1 rounded-full text-xs font-bold">
+          {filteredBookings.length} Trips
+        </div>
+      </div>
 
-      {/* Tabs */}
-     <div className="flex space-x-2 border-b border-gray-200 overflow-x-auto">
-  {["Pending", "Assigned", "Completed", "Cancelled", "Billed"].map((tab) => (
-    <button
-      key={tab}
-      onClick={() => setActiveTab(tab as any)}
-      className={`px-4 py-2 text-sm font-medium border-b-2 whitespace-nowrap transition-colors ${
-        activeTab === tab
-          ? "border-blue-600 text-blue-600"
-          : "border-transparent text-gray-500 hover:text-gray-700"
-      }`}
-    >
-      {tab}
-    </button>
-  ))}
-</div>
+      {/* --- Tabs (Segmented Control Style) --- */}
+      <div className="sticky top-14 z-30 bg-gray-50/95 backdrop-blur-sm -mx-4 px-4 py-2 overflow-x-auto no-scrollbar">
+        <div className="flex bg-gray-200/50 p-1 rounded-xl min-w-max">
+          {["Pending", "Assigned", "Completed", "Cancelled", "Billed"].map((tab) => (
+            <button
+              key={tab}
+              onClick={() => setActiveTab(tab as any)}
+              className={`px-5 py-2 text-xs font-bold rounded-lg transition-all ${
+                activeTab === tab
+                  ? "bg-white text-blue-600 shadow-sm"
+                  : "text-gray-500 hover:text-gray-700"
+              }`}
+            >
+              {tab}
+            </button>
+          ))}
+        </div>
+      </div>
 
-      {/* List */}
+      {/* --- List Area --- */}
       <div className="space-y-4">
         {loading ? (
-          <p className="text-gray-500">Loading bookings...</p>
+          <div className="flex justify-center p-12">
+            <div className="animate-spin h-8 w-8 border-4 border-blue-500 border-t-transparent rounded-full"></div>
+          </div>
         ) : filteredBookings.length === 0 ? (
-          <div className="p-8 text-center bg-white rounded-xl border border-dashed border-gray-300">
-            <p className="text-gray-500">No {activeTab} bookings found.</p>
+          <div className="p-12 text-center bg-white rounded-3xl border border-dashed border-gray-200">
+            <p className="text-gray-400 font-medium">No {activeTab.toLowerCase()} bookings</p>
           </div>
         ) : (
-          filteredBookings.map((booking) => (
-            <div key={booking.id} className="bg-white p-5 rounded-xl shadow-sm border border-gray-100 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-              
-              {/* Trip Info */}
-              <div className="flex-1">
-                <div className="flex items-center gap-2 mb-1">
-                  <span className="text-xs font-bold px-2 py-0.5 rounded bg-gray-100 text-gray-600 border border-gray-200">
-                    {booking.tripId}
-                  </span>
-                  <span className="text-sm font-semibold text-gray-800">{booking.clientName}</span>
+          filteredBookings.map((booking: any) => (
+            <div 
+                key={booking.id} 
+                className="bg-white rounded-2xl shadow-[0_2px_8px_rgba(0,0,0,0.04)] border border-gray-100 overflow-hidden active:scale-[0.99] transition-transform"
+            >
+              {/* Card Top: Client & Trip ID */}
+              <div className="px-4 py-3 border-b border-gray-50 flex justify-between items-center bg-gray-50/30">
+                <div className="flex items-center gap-2">
+                  <div className="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center text-white text-xs font-bold">
+                    {booking.clientName.charAt(0)}
+                  </div>
+                  <div>
+                    <h3 className="text-sm font-bold text-gray-900 leading-none">{booking.clientName}</h3>
+                    <span className="text-[10px] font-bold text-blue-600 uppercase tracking-tighter">#{booking.tripId}</span>
+                  </div>
                 </div>
-                
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-1 text-sm text-gray-600 mt-2">
-                  <div className="flex items-center gap-2">
-                     <MapPin className="h-4 w-4 text-blue-500" /> 
-                     {booking.pickup} <span className="text-gray-400">→</span> {booking.drop}
+                <button className="p-1 text-gray-400"><MoreVertical className="h-4 w-4" /></button>
+              </div>
+              
+              <div className="p-4">
+                {/* Date & Time Row */}
+                <div className="flex items-center gap-4 mb-4 text-gray-600">
+                    <div className="flex items-center gap-1.5 bg-orange-50 text-orange-700 px-2 py-1 rounded-md">
+                        <CalendarClock className="h-3.5 w-3.5" />
+                        <span className="text-xs font-bold">{booking.date}</span>
+                    </div>
+                    <div className="text-xs font-medium text-gray-400">@ {booking.time}</div>
+                </div>
+
+                {/* Route Visualizer */}
+                <div className="flex gap-3 mb-4">
+                  <div className="flex flex-col items-center py-1">
+                    <div className="w-2.5 h-2.5 rounded-full border-2 border-blue-500 bg-white"></div>
+                    <div className="w-0.5 flex-1 bg-dashed border-l border-gray-200 my-1"></div>
+                    <div className="w-2.5 h-2.5 rounded-full bg-blue-500"></div>
                   </div>
-                  <div className="flex items-center gap-2">
-                     <CalendarClock className="h-4 w-4 text-orange-500" />
-                     {booking.date} @ {booking.time}
+                  <div className="flex flex-col gap-3 flex-1">
+                    <p className="text-sm font-medium text-gray-800 line-clamp-1">{booking.pickup}</p>
+                    <p className="text-sm font-medium text-gray-800 line-clamp-1">{booking.drop}</p>
                   </div>
-                    {booking.notes && (
-      <div className="col-span-1 md:col-span-2 mt-2 p-2 bg-amber-50 border border-amber-100 rounded-lg flex items-start gap-2 text-amber-900 text-xs">
-        <StickyNote className="h-3.5 w-3.5 mt-0.5 text-amber-600 flex-shrink-0" />
-        <p><span className="font-bold uppercase text-[10px]">Notes:</span> {booking.notes}</p>
-      </div>
-    )}
-                  {booking.status !== "Pending" && (
-                    <div className="col-span-1 md:col-span-2 flex items-center gap-2 mt-2 pt-2 border-t border-gray-50 text-blue-700 bg-blue-50 p-2 rounded">
-                      <Car className="h-4 w-4" />
-                      <span>{booking.assignedVehicleModel} ({booking.assignedVehicleNumber})</span>
-                      <span className="text-gray-300">|</span>
-                      <User className="h-4 w-4" />
-                      <span>{booking.assignedDriverName}</span>
+                </div>
+
+                {/* Notes if present */}
+                {booking.notes && (
+                  <div className="mb-4 p-3 bg-amber-50 rounded-xl flex items-start gap-2 border border-amber-100/50">
+                    <StickyNote className="h-4 w-4 text-amber-600 flex-shrink-0 mt-0.5" />
+                    <p className="text-xs text-amber-900 leading-relaxed"><span className="font-bold">Note:</span> {booking.notes}</p>
+                  </div>
+                )}
+
+                {/* Assignment Details (Only if assigned) */}
+                {booking.status !== "Pending" && booking.status !== "Cancelled" && (
+                  <div className="mb-4 p-3 bg-blue-50 rounded-xl space-y-2 border border-blue-100">
+                    <div className="flex items-center justify-between text-xs">
+                        <div className="flex items-center gap-2 text-blue-700 font-bold">
+                            <Car className="h-3.5 w-3.5" /> {booking.assignedVehicleNumber}
+                        </div>
+                        <div className="flex items-center gap-2 text-blue-700 font-bold">
+                            <User className="h-3.5 w-3.5" /> {booking.assignedDriverName}
+                        </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* --- Action Buttons --- */}
+                <div className="flex items-center gap-2 mt-2">
+                  {booking.status === "Pending" && (
+                    <>
+                      <button 
+                        onClick={() => openAssignModal(booking)}
+                        className="flex-1 flex items-center justify-center gap-2 bg-blue-600 text-white py-3 rounded-xl text-sm font-bold shadow-md shadow-blue-100"
+                      >
+                        <CheckCircle2 className="h-4 w-4" /> Assign Trip
+                      </button>
+                      <button 
+                        onClick={() => cancelBooking(booking)}
+                        className="px-4 py-3 bg-white text-red-500 border border-red-100 rounded-xl hover:bg-red-50"
+                      >
+                        <X className="h-4 w-4" />
+                      </button>
+                    </>
+                  )}
+
+                  {booking.status === "Assigned" && (
+                    <>
+                      <button 
+                        onClick={() => shareOnWhatsApp(booking)}
+                        className="flex-1 flex items-center justify-center gap-2 bg-[#25D366] text-white py-3 rounded-xl text-sm font-bold"
+                      >
+                        <MessageCircle className="h-5 w-5" /> WhatsApp Driver
+                      </button>
+                      <button 
+                        onClick={() => markAsCompleted(booking)}
+                        className="px-4 py-3 bg-gray-900 text-white rounded-xl"
+                        title="Complete Trip"
+                      >
+                        <FileCheck className="h-5 w-5" />
+                      </button>
+                    </>
+                  )}
+
+                  {["Completed", "Cancelled", "Billed"].includes(booking.status) && (
+                    <div className={`w-full text-center py-2.5 rounded-xl text-xs font-black uppercase tracking-widest border ${
+                        booking.status === 'Completed' ? 'bg-green-50 text-green-600 border-green-100' :
+                        booking.status === 'Cancelled' ? 'bg-red-50 text-red-600 border-red-100' :
+                        'bg-purple-50 text-purple-600 border-purple-100'
+                    }`}>
+                        {booking.status}
                     </div>
                   )}
                 </div>
               </div>
-
-              {/* Actions */}
-              <div className="flex items-center gap-2">
-                
-               {booking.status === "Pending" && (
-    <>
-      <button 
-        onClick={() => openAssignModal(booking)}
-        className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-blue-700 shadow-sm"
-      >
-        <CheckCircle2 className="h-4 w-4" /> Assign
-      </button>
-      <button 
-        onClick={() => cancelBooking(booking)}
-        className="flex items-center gap-2 bg-white text-red-600 border border-red-200 px-4 py-2 rounded-lg text-sm hover:bg-red-50"
-      >
-        <X className="h-4 w-4" /> Cancel
-      </button>
-    </>
-  )}
-  
-
-                {/* Assigned Actions */}
-                {booking.status === "Assigned" && (
-                  <>
-                    <button 
-                      onClick={() => shareOnWhatsApp(booking)}
-                      className="flex items-center gap-2 bg-green-500 text-white px-3 py-2 rounded-lg text-sm hover:bg-green-600 shadow-sm"
-                      title="Share via WhatsApp"
-                    >
-                      <MessageCircle className="h-4 w-4" /> WhatsApp
-                    </button>
-                    <button 
-                      onClick={() => markAsCompleted(booking)}
-                      className="flex items-center gap-2 bg-gray-800 text-white px-3 py-2 rounded-lg text-sm hover:bg-gray-900 shadow-sm"
-                    >
-                      <FileCheck className="h-4 w-4" /> Complete
-                    </button>
-                  </>
-                )}
-
-                {/* Completed Actions */}
-                {booking.status === "Completed" && (
-                  <span className="text-sm font-medium text-green-600 flex items-center gap-1 bg-green-50 px-3 py-1 rounded-full border border-green-100">
-                    <CheckCircle2 className="h-4 w-4" /> Ready for Bill
-                  </span>
-                )}
-                {booking.status === "Cancelled" && (
-    <span className="text-sm font-medium text-red-600 bg-red-50 px-3 py-1 rounded-full border border-red-100">
-      Cancelled
-    </span>
-  )}
-    {booking.status === "Billed" && (
-    <span className="text-sm font-medium text-purple-600 bg-purple-50 px-3 py-1 rounded-full border border-purple-100">
-      Billed & Closed
-    </span>
-  )}
-         </div>
             </div>
           ))
         )}
       </div>
 
-      {/* --- Assignment Modal --- */}
+      {/* --- Assignment Modal (Desktop) / Bottom Sheet (Mobile) --- */}
       {isAssignModalOpen && selectedBooking && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 p-4">
-          <div className="bg-white rounded-xl shadow-xl w-full max-w-lg overflow-hidden">
-            <div className="flex justify-between items-center px-6 py-4 border-b bg-gray-50">
+        <div className="fixed inset-0 z-[100] flex items-end md:items-center justify-center bg-black/60 backdrop-blur-sm">
+          <div className="bg-white rounded-t-[32px] md:rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden animate-in slide-in-from-bottom duration-300">
+            {/* Grabber for Mobile UI */}
+            <div className="md:hidden w-12 h-1.5 bg-gray-200 rounded-full mx-auto mt-3 mb-1"></div>
+            
+            <div className="flex justify-between items-center px-6 py-4 border-b border-gray-50">
               <div>
-                <h2 className="text-lg text-gray-800 font-bold">Assign Cab</h2>
-                <p className="text-xs text-gray-500">Trip ID: {selectedBooking.tripId}</p>
+                <h2 className="text-lg text-gray-900 font-black">Assign Cab</h2>
+                <p className="text-xs font-bold text-blue-600 uppercase tracking-tighter">#{selectedBooking.tripId} • {selectedBooking.clientName}</p>
               </div>
-              <button onClick={() => setIsAssignModalOpen(false)}><X className="h-5 w-5 text-gray-400" /></button>
+              <button 
+                onClick={() => setIsAssignModalOpen(false)}
+                className="p-2 bg-gray-100 rounded-full text-gray-500"
+              >
+                <X className="h-5 w-5" />
+              </button>
             </div>
             
-            <form onSubmit={handleAssignSubmit} className="p-6 space-y-4">
-              {/* Driver Select */}
-              <div>
-                <label className="block text-sm text-gray-800 font-medium mb-1">Select Driver *</label>
-                <select 
-                  className="w-full border rounded-lg text-gray-900 px-3 py-2 bg-white"
-                  value={assignData.driverId}
-                  onChange={(e) => setAssignData({...assignData, driverId: e.target.value})}
-                  required
-                >
-                  <option value="">-- Choose Driver --</option>
-                  {drivers.map(d => (
-                    <option key={d.id} value={d.id}>{d.name} ({d.mobile})</option>
-                  ))}
-                </select>
+            <form onSubmit={handleAssignSubmit} className="p-6 space-y-5">
+              <div className="space-y-4">
+                <div className="group">
+                    <label className="block text-[10px] font-black uppercase text-gray-400 mb-1 ml-1">Select Driver</label>
+                    <select 
+                    className="w-full bg-gray-50 border-0 rounded-2xl text-gray-900 px-4 py-3.5 focus:ring-2 focus:ring-blue-500 transition-all font-medium appearance-none"
+                    value={assignData.driverId}
+                    onChange={(e) => setAssignData({...assignData, driverId: e.target.value})}
+                    required
+                    >
+                    <option value="">-- Choose Driver --</option>
+                    {drivers.map((d:any) => (
+                        <option key={d.id} value={d.id}>{d.name} ({d.mobile})</option>
+                    ))}
+                    </select>
+                </div>
+
+                <div className="group">
+                    <label className="block text-[10px] font-black uppercase text-gray-400 mb-1 ml-1">Select Vehicle</label>
+                    <select 
+                    className="w-full bg-gray-50 border-0 rounded-2xl text-gray-900 px-4 py-3.5 focus:ring-2 focus:ring-blue-500 transition-all font-medium appearance-none"
+                    value={assignData.vehicleId}
+                    onChange={(e) => setAssignData({...assignData, vehicleId: e.target.value})}
+                    required
+                    >
+                    <option value="">-- Choose Vehicle --</option>
+                    {vehicles.map((v:any) => (
+                        <option key={v.id} value={v.id}>{v.model} - {v.number}</option>
+                    ))}
+                    </select>
+                </div>
+
+                <div className="group">
+                    <label className="block text-[10px] font-black uppercase text-gray-400 mb-1 ml-1">Affiliated Agent</label>
+                    <select 
+                    className="w-full bg-gray-50 border-0 rounded-2xl text-gray-900 px-4 py-3.5 focus:ring-2 focus:ring-blue-500 transition-all font-medium appearance-none"
+                    value={assignData.agentId}
+                    onChange={(e) => setAssignData({...assignData, agentId: e.target.value})}
+                    >
+                    <option value="">-- Direct Booking --</option>
+                    {agents.map((a:any) => (
+                        <option key={a.id} value={a.id}>{a.name} ({a.agencyName})</option>
+                    ))}
+                    </select>
+                </div>
               </div>
 
-              {/* Vehicle Select */}
-              <div>
-                <label className="block text-sm text-gray-800 font-medium mb-1">Select Vehicle *</label>
-                <select 
-                  className="w-full border rounded-lg text-gray-900 px-3 py-2 bg-white"
-                  value={assignData.vehicleId}
-                  onChange={(e) => setAssignData({...assignData, vehicleId: e.target.value})}
-                  required
-                >
-                  <option value="">-- Choose Vehicle --</option>
-                  {vehicles.map(v => (
-                    <option key={v.id} value={v.id}>{v.model} ({v.type}) - {v.number}</option>
-                  ))}
-                </select>
-              </div>
-
-              {/* Agent Select */}
-              <div>
-                <label className="block text-sm text-gray-800 font-medium mb-1">Affiliated Agent (Optional)</label>
-                <select 
-                  className="w-full border rounded-lg text-gray-900 px-3 py-2 bg-white"
-                  value={assignData.agentId}
-                  onChange={(e) => setAssignData({...assignData, agentId: e.target.value})}
-                >
-                  <option value="">-- None (Direct Booking) --</option>
-                  {agents.map(a => (
-                    <option key={a.id} value={a.id}>{a.name} - {a.agencyName}</option>
-                  ))}
-                </select>
-              </div>
-
-              <button type="submit" className="w-full py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 mt-2 font-medium">
-                Confirm Assignment
+              <button type="submit" className="w-full py-4 bg-blue-600 text-white rounded-2xl hover:bg-blue-700 font-bold shadow-lg shadow-blue-100 transition-all active:scale-95 mt-2">
+                Confirm & Assign
               </button>
+              <div className="h-6 md:hidden"></div> {/* Extra space for mobile home bar */}
             </form>
           </div>
         </div>

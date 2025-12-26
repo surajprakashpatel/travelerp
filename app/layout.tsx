@@ -7,8 +7,8 @@ import { AuthProvider } from "@/context/AuthContext";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "Travel ERP - Admin Panel",
-  description: "ERP System for Travel Agency Management",
+  title: "Tour Stack - Cab Management",
+  description: "ERP System for Cab Management",
 };
 
 export default function RootLayout({

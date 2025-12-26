@@ -12,7 +12,17 @@ import {
   deleteDoc, 
   serverTimestamp 
 } from "firebase/firestore";
-import { Plus, Search, Pencil, Trash2, X, Phone, MapPin } from "lucide-react";
+import {  Plus, 
+  Search, 
+  Phone, 
+  Mail, 
+  MapPin, 
+  Pencil, 
+  Trash2, 
+  X, 
+  MessageCircle, 
+  MoreVertical,
+  User } from "lucide-react";
 import toast from "react-hot-toast";
 
 // Define the Client interface
@@ -146,193 +156,256 @@ export default function ClientsPage() {
   };
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <h1 className="text-2xl font-bold text-gray-800">Client Management</h1>
-        <button
-          onClick={openAddModal}
-          className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition shadow-sm"
-        >
-          <Plus className="h-4 w-4" />
-          Add Client
-        </button>
-      </div>
-
-      {/* Search Bar */}
-      <div className="relative max-w-md">
-        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-          <Search className="h-5 w-5 text-gray-400" />
+    <div className="space-y-4 md:space-y-6 pb-24">
+      {/* --- Header & Search Section --- */}
+      <div className="flex flex-col gap-4">
+        <div className="flex justify-between items-center px-1">
+          <h1 className="text-2xl font-black text-gray-900 tracking-tight">Clients</h1>
+          <button
+            onClick={openAddModal}
+            className="hidden md:flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-xl hover:bg-blue-700 transition shadow-md shadow-blue-100"
+          >
+            <Plus className="h-4 w-4" /> Add Client
+          </button>
         </div>
-        <input
-          type="text"
-          placeholder="Search by Name or Mobile..."
-          className="block w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg text-gray-900 focus:ring-blue-500 focus:border-blue-500"
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-        />
+
+        {/* Search Bar - App Style */}
+        <div className="relative group">
+          <div className="absolute inset-y-0 left-4 flex items-center pointer-events-none">
+            <Search className="h-5 w-5 text-gray-400 group-focus-within:text-blue-500 transition-colors" />
+          </div>
+          <input
+            type="text"
+            placeholder="Search by name or phone..."
+            className="block w-full pl-12 pr-4 py-3.5 bg-white border border-gray-200 rounded-2xl text-gray-900 focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 transition-all shadow-sm"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+          />
+        </div>
       </div>
 
-      {/* Client Table */}
-      <div className="bg-white rounded-xl shadow-sm border  border-gray-100 overflow-hidden">
+      {/* --- Client List Area --- */}
+      <div className="mt-2">
         {loading ? (
-          <div className="p-8 text-center text-gray-500">Loading clients...</div>
-        ) : filteredClients.length === 0 ? (
-          <div className="p-8 text-center text-gray-500">No clients found.</div>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-sm text-gray-600">
-              <thead className="bg-gray-50 text-gray-700 font-medium">
-                <tr>
-                  <th className="px-6 py-4">Name</th>
-                  <th className="px-6 py-4">Contact Info</th>
-                  <th className="px-6 py-4">Address</th>
-                  <th className="px-6 py-4 text-right">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-100">
-                {filteredClients.map((client) => (
-                  <tr key={client.id} className="hover:bg-gray-50 transition">
-                    <td className="px-6 py-4 font-medium text-gray-900">
-                      {client.name}
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className="flex flex-col gap-1">
-                        <div className="flex items-center gap-2">
-                          <Phone className="h-3 w-3 text-gray-400" />
-                          {client.mobile}
-                        </div>
-                        {client.email && (
-                          <span className="text-xs text-gray-400">{client.email}</span>
-                        )}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 truncate max-w-xs">
-                      {client.address ? (
-                        <div className="flex items-center gap-2">
-                          <MapPin className="h-3 w-3 text-gray-400" />
-                          {client.address}
-                        </div>
-                      ) : (
-                        "-"
-                      )}
-                    </td>
-                    <td className="px-6 py-4 text-right">
-                      <div className="flex justify-end gap-2">
-                        <button
-                          onClick={() => openEditModal(client)}
-                          className="p-1.5 text-blue-600 hover:bg-blue-50 rounded"
-                          title="Edit"
-                        >
-                          <Pencil className="h-4 w-4" />
-                        </button>
-                        <button
-                          onClick={() => handleDelete(client.id)}
-                          className="p-1.5 text-red-600 hover:bg-red-50 rounded"
-                          title="Delete"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+          <div className="flex flex-col items-center justify-center p-12 space-y-3">
+             <div className="animate-spin h-8 w-8 border-4 border-blue-500 border-t-transparent rounded-full"></div>
+             <p className="text-gray-500 text-sm font-medium">Fetching clients...</p>
           </div>
+        ) : filteredClients.length === 0 ? (
+          <div className="p-12 text-center bg-white rounded-3xl border border-dashed border-gray-200">
+            <User className="h-10 w-10 text-gray-300 mx-auto mb-3" />
+            <p className="text-gray-500 font-medium">No clients found matching your search.</p>
+          </div>
+        ) : (
+          <>
+            {/* Desktop Table View (Hidden on Mobile) */}
+            <div className="hidden md:block bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+              <table className="w-full text-left text-sm text-gray-600">
+                <thead className="bg-gray-50 text-gray-700 font-bold uppercase text-[11px] tracking-widest">
+                  <tr>
+                    <th className="px-6 py-4">Client</th>
+                    <th className="px-6 py-4">Contact Info</th>
+                    <th className="px-6 py-4">Location</th>
+                    <th className="px-6 py-4 text-right">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-100">
+                  {filteredClients.map((client: any) => (
+                    <tr key={client.id} className="hover:bg-blue-50/30 transition">
+                      <td className="px-6 py-4">
+                        <div className="flex items-center gap-3">
+                            <div className="w-9 h-9 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center font-bold">
+                                {client.name.charAt(0)}
+                            </div>
+                            <span className="font-bold text-gray-900">{client.name}</span>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="space-y-0.5">
+                          <div className="flex items-center gap-2 text-gray-700 font-medium">
+                            <Phone className="h-3 w-3 text-gray-400" /> {client.mobile}
+                          </div>
+                          {client.email && (
+                            <div className="flex items-center gap-2 text-xs text-gray-400 font-medium">
+                                <Mail className="h-3 w-3" /> {client.email}
+                            </div>
+                          )}
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 max-w-xs truncate">
+                        {client.address ? (
+                          <div className="flex items-center gap-2 text-gray-500">
+                            <MapPin className="h-3 w-3 text-gray-400" /> {client.address}
+                          </div>
+                        ) : "-"}
+                      </td>
+                      <td className="px-6 py-4 text-right">
+                        <div className="flex justify-end gap-1">
+                          <button onClick={() => openEditModal(client)} className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg"><Pencil className="h-4 w-4" /></button>
+                          <button onClick={() => handleDelete(client.id)} className="p-2 text-red-600 hover:bg-red-50 rounded-lg"><Trash2 className="h-4 w-4" /></button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Mobile Card View (Hidden on Desktop) */}
+            <div className="md:hidden grid grid-cols-1 gap-4">
+              {filteredClients.map((client: any) => (
+                <div key={client.id} className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100 relative">
+                  <div className="flex items-start justify-between mb-4">
+                    <div className="flex items-center gap-3">
+                      <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-blue-700 text-white rounded-2xl flex items-center justify-center font-bold text-lg shadow-lg shadow-blue-100">
+                        {client.name.charAt(0)}
+                      </div>
+                      <div>
+                        <h3 className="font-black text-gray-900">{client.name}</h3>
+                        <p className="text-xs text-gray-400 font-medium">Client ID: {client.id.slice(-6).toUpperCase()}</p>
+                      </div>
+                    </div>
+                    <div className="flex gap-1">
+                        <button onClick={() => openEditModal(client)} className="p-2 bg-gray-50 text-gray-400 rounded-full"><Pencil className="h-4 w-4" /></button>
+                        <button onClick={() => handleDelete(client.id)} className="p-2 bg-red-50 text-red-400 rounded-full"><Trash2 className="h-4 w-4" /></button>
+                    </div>
+                  </div>
+
+                  <div className="space-y-3 mb-5 px-1">
+                    <div className="flex items-center gap-3 text-sm text-gray-600">
+                        <div className="w-8 h-8 rounded-full bg-gray-50 flex items-center justify-center">
+                            <Phone className="h-4 w-4 text-gray-400" />
+                        </div>
+                        <span className="font-bold">{client.mobile}</span>
+                    </div>
+                    {client.email && (
+                      <div className="flex items-center gap-3 text-sm text-gray-600">
+                        <div className="w-8 h-8 rounded-full bg-gray-50 flex items-center justify-center">
+                            <Mail className="h-4 w-4 text-gray-400" />
+                        </div>
+                        <span className="font-medium truncate">{client.email}</span>
+                      </div>
+                    )}
+                    {client.address && (
+                      <div className="flex items-center gap-3 text-sm text-gray-600">
+                        <div className="w-8 h-8 rounded-full bg-gray-50 flex items-center justify-center">
+                            <MapPin className="h-4 w-4 text-gray-400" />
+                        </div>
+                        <span className="text-xs text-gray-500 leading-snug flex-1">{client.address}</span>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Mobile Quick Actions */}
+                  <div className="grid grid-cols-2 gap-3">
+                    <a 
+                      href={`tel:${client.mobile}`} 
+                      className="flex items-center justify-center gap-2 py-3 bg-blue-600 text-white rounded-xl text-sm font-bold shadow-md shadow-blue-100 active:scale-95 transition-transform"
+                    >
+                      <Phone className="h-4 w-4 fill-white" /> Call Now
+                    </a>
+                    <a 
+                      href={`https://wa.me/${client.mobile}`} 
+                      className="flex items-center justify-center gap-2 py-3 bg-[#25D366] text-white rounded-xl text-sm font-bold shadow-md shadow-green-100 active:scale-95 transition-transform"
+                    >
+                      <MessageCircle className="h-4 w-4 fill-white" /> WhatsApp
+                    </a>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </>
         )}
       </div>
 
-      {/* Add/Edit Modal */}
+      {/* --- Add/Edit Modal (Bottom Sheet on Mobile) --- */}
       {isModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 p-4">
-          <div className="bg-white rounded-xl shadow-xl w-full max-w-md overflow-hidden">
-            <div className="flex justify-between items-center px-6 py-4 border-b border-gray-100 bg-gray-50">
-              <h2 className="text-lg font-bold text-gray-800">
-                {isEditing ? "Edit Client" : "Add New Client"}
+        <div className="fixed inset-0 z-[100] flex items-end md:items-center justify-center bg-black/60 backdrop-blur-sm">
+          <div className="bg-white rounded-t-[32px] md:rounded-3xl shadow-2xl w-full max-w-md overflow-hidden animate-in slide-in-from-bottom duration-300">
+            <div className="md:hidden w-12 h-1.5 bg-gray-200 rounded-full mx-auto mt-4 mb-2"></div>
+            
+            <div className="flex justify-between items-center px-6 py-4 border-b border-gray-50">
+              <h2 className="text-xl font-black text-gray-900">
+                {isEditing ? "Update Profile" : "New Client"}
               </h2>
-              <button
-                onClick={() => setIsModalOpen(false)}
-                className="text-gray-400 hover:text-gray-600"
-              >
-                <X className="h-5 w-5" />
-              </button>
+              <button onClick={() => setIsModalOpen(false)} className="p-2 bg-gray-100 rounded-full text-gray-500"><X className="h-5 w-5" /></button>
             </div>
             
             <form onSubmit={handleSubmit} className="p-6 space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Full Name *
-                </label>
-                <input
-                  type="text"
-                  name="name"
-                  required
-                  className="w-full border text-gray-900 border-gray-300 rounded-lg px-3 py-2 focus:ring-blue-500 focus:border-blue-500"
-                  value={formData.name}
-                  onChange={handleInputChange}
-                />
+              <div className="space-y-4">
+                <div className="group">
+                  <label className="block text-[10px] font-black uppercase text-gray-400 mb-1.5 ml-1 tracking-widest">Full Name</label>
+                  <input
+                    type="text"
+                    name="name"
+                    required
+                    placeholder="Enter client name"
+                    className="w-full bg-gray-50 border-0 rounded-2xl text-gray-900 px-4 py-3.5 focus:ring-2 focus:ring-blue-500 transition-all font-medium"
+                    value={formData.name}
+                    onChange={handleInputChange}
+                  />
+                </div>
+
+                <div className="group">
+                  <label className="block text-[10px] font-black uppercase text-gray-400 mb-1.5 ml-1 tracking-widest">WhatsApp Number</label>
+                  <input
+                    type="tel"
+                    inputMode="tel"
+                    name="mobile"
+                    required
+                    placeholder="+91 00000 00000"
+                    className="w-full bg-gray-50 border-0 rounded-2xl text-gray-900 px-4 py-3.5 focus:ring-2 focus:ring-blue-500 transition-all font-medium"
+                    value={formData.mobile}
+                    onChange={handleInputChange}
+                  />
+                </div>
+
+                <div className="group">
+                  <label className="block text-[10px] font-black uppercase text-gray-400 mb-1.5 ml-1 tracking-widest">Email Address (Optional)</label>
+                  <input
+                    type="email"
+                    name="email"
+                    placeholder="client@email.com"
+                    className="w-full bg-gray-50 border-0 rounded-2xl text-gray-900 px-4 py-3.5 focus:ring-2 focus:ring-blue-500 transition-all font-medium"
+                    value={formData.email}
+                    onChange={handleInputChange}
+                  />
+                </div>
+
+                <div className="group">
+                  <label className="block text-[10px] font-black uppercase text-gray-400 mb-1.5 ml-1 tracking-widest">Address</label>
+                  <textarea
+                    name="address"
+                    placeholder="Physical address..."
+                    rows={3}
+                    className="w-full bg-gray-50 border-0 rounded-2xl text-gray-900 px-4 py-3.5 focus:ring-2 focus:ring-blue-500 transition-all font-medium resize-none"
+                    value={formData.address}
+                    onChange={handleInputChange}
+                  />
+                </div>
               </div>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Whatsapp Number *
-                </label>
-                <input
-                  type="tel"
-                  name="mobile"
-                  required
-                  className="w-full border border-gray-300 text-gray-900 rounded-lg px-3 py-2 focus:ring-blue-500 focus:border-blue-500"
-                  value={formData.mobile}
-                  onChange={handleInputChange}
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Email Address
-                </label>
-                <input
-                  type="email"
-                  name="email"
-                  className="w-full border text-gray-900 border-gray-300 rounded-lg px-3 py-2 focus:ring-blue-500 focus:border-blue-500"
-                  value={formData.email}
-                  onChange={handleInputChange}
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Address
-                </label>
-                <textarea
-                  name="address"
-                  rows={3}
-                  className="w-full border border-gray-300 text-gray-900 rounded-lg px-3 py-2 focus:ring-blue-500 focus:border-blue-500"
-                  value={formData.address}
-                  onChange={handleInputChange}
-                />
-              </div>
-
-              <div className="flex gap-3 pt-2">
-                <button
-                  type="button"
-                  onClick={() => setIsModalOpen(false)}
-                  className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50"
-                >
-                  Cancel
-                </button>
+              <div className="flex gap-3 pt-4">
                 <button
                   type="submit"
-                  className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+                  className="flex-1 py-4 bg-blue-600 text-white rounded-2xl hover:bg-blue-700 font-bold shadow-lg shadow-blue-100 active:scale-95 transition-all"
                 >
-                  {isEditing ? "Update Client" : "Save Client"}
+                  {isEditing ? "Save Changes" : "Create Client"}
                 </button>
               </div>
+              <div className="h-4 md:hidden"></div>
             </form>
           </div>
         </div>
       )}
+
+      {/* Mobile Floating Action Button */}
+      <button 
+        onClick={openAddModal}
+        className="md:hidden fixed bottom-24 right-6 h-14 w-14 bg-blue-600 rounded-full shadow-xl flex items-center justify-center text-white z-40 active:scale-90 transition-transform"
+      >
+        <Plus className="h-8 w-8" />
+      </button>
     </div>
   );
 }

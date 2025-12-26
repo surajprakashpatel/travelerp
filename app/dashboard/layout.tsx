@@ -45,7 +45,7 @@ export default function DashboardLayout({
     });
     return () => unsubscribe();
   }, [router]);
-
+const isDashboardHome = pathname === "/dashboard";
   useEffect(() => {
     setIsSidebarOpen(false);
   }, [pathname]);
@@ -114,7 +114,6 @@ export default function DashboardLayout({
           <span className="text-xl font-bold bg-gradient-to-r from-blue-700 to-blue-500 bg-clip-text text-transparent">Tour Stack</span>
         </div>
         <nav className="flex-1 overflow-y-auto py-6 space-y-1">
-          <div className="px-4 mb-2 text-[10px] font-semibold text-gray-400 uppercase tracking-wider">Main Menu</div>
           {[...primaryNav, ...secondaryNav].map((item) => (
             <div key={item.href} className="px-3">
                 <NavItem item={item} />
@@ -145,7 +144,6 @@ export default function DashboardLayout({
               </button>
             </div>
             <nav className="flex-1 overflow-y-auto py-4">
-              <div className="px-4 mb-2 text-[10px] font-semibold text-gray-400 uppercase tracking-wider">Administration</div>
               {secondaryNav.map((item) => (
                 <div key={item.href} className="px-3 py-1">
                     <NavItem item={item} />
@@ -170,7 +168,7 @@ export default function DashboardLayout({
             <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
                 <span className="text-white font-bold text-xs">C</span>
             </div>
-            <span className="font-bold text-gray-900 tracking-tight">Chalbo ERP</span>
+            <span className="font-bold text-gray-900 tracking-tight">Tour Stack</span>
           </div>
           <button className="p-1 text-gray-500">
              <UserCircle className="h-6 w-6" />
@@ -183,16 +181,14 @@ export default function DashboardLayout({
             {children}
           </div>
         </main>
-
-        {/* --- MOBILE ONLY UI ELEMENTS --- */}
-
-        {/* Floating Action Button (Mobile) */}
+        {isDashboardHome && (
         <Link 
             href="/dashboard/trips/create"
             className="md:hidden fixed bottom-24 right-6 h-14 w-14 bg-blue-600 rounded-full shadow-lg shadow-blue-200 flex items-center justify-center text-white active:scale-90 transition-transform z-40"
         >
             <Plus className="h-8 w-8" />
         </Link>
+        )}
 
         {/* Bottom Navigation Bar (Mobile) */}
         <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 px-2 py-2 flex justify-around items-center z-50 pb-safe shadow-[0_-4px_10px_rgba(0,0,0,0.03)]">

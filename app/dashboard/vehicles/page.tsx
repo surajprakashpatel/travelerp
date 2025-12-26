@@ -12,7 +12,19 @@ import {
   deleteDoc, 
   serverTimestamp 
 } from "firebase/firestore";
-import { Plus, Search, Pencil, Trash2, X, Car, Hash, User } from "lucide-react";
+import { 
+  Plus, 
+  Search, 
+  Pencil, 
+  Trash2, 
+  X, 
+  Car, 
+  Hash, 
+  User, 
+  Settings2, 
+  ShieldCheck,
+  Building2
+} from "lucide-react";
 import toast from "react-hot-toast";
 
 interface Vehicle {
@@ -30,20 +42,17 @@ export default function VehiclesPage() {
   const [searchTerm, setSearchTerm] = useState("");
   const { user } = useAuth();
   
-  // Modal State
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [currentId, setCurrentId] = useState<string | null>(null);
 
-  // Form State
   const [formData, setFormData] = useState({
     number: "",
     model: "",
-    type: "Sedan", // Default
+    type: "Sedan",
     owner: "",
   });
 
-  // --- Fetch Data ---
   const fetchVehicles = async () => {
     try {
       if (!user) return;
@@ -53,7 +62,6 @@ export default function VehiclesPage() {
         id: doc.id,
         ...doc.data(),
       })) as Vehicle[];
-      
       setVehicles(list);
       setFilteredVehicles(list);
     } catch (error) {
@@ -63,11 +71,8 @@ export default function VehiclesPage() {
     }
   };
 
-  useEffect(() => {
-    fetchVehicles();
-  }, []);
+  useEffect(() => { fetchVehicles(); }, [user]);
 
-  // --- Search Logic ---
   useEffect(() => {
     const lowerSearch = searchTerm.toLowerCase();
     const filtered = vehicles.filter(
@@ -79,9 +84,9 @@ export default function VehiclesPage() {
     setFilteredVehicles(filtered);
   }, [searchTerm, vehicles]);
 
-  // --- Form Handlers ---
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
+    const value = e.target.name === "number" ? e.target.value.toUpperCase() : e.target.value;
+    setFormData({ ...formData, [e.target.name]: value });
   };
 
   const openAddModal = () => {
@@ -104,183 +109,245 @@ export default function VehiclesPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formData.number || !formData.model) {
-      toast.error("Vehicle Number and Model are required");
-      return;
-    }
+    if (!formData.number || !formData.model) return toast.error("Required fields missing");
 
     try {
       if (!user) return;
+      const vehiclePath = collection(db, "agencies", user.uid, "vehicles");
       if (isEditing && currentId) {
         await updateDoc(doc(db, "agencies", user.uid, "vehicles", currentId), { ...formData });
         toast.success("Vehicle updated");
       } else {
-        await addDoc(collection(db, "agencies", user.uid, "vehicles"), {
-          ...formData,
-          createdAt: serverTimestamp(),
-        });
+        await addDoc(vehiclePath, { ...formData, createdAt: serverTimestamp() });
         toast.success("Vehicle added");
       }
       setIsModalOpen(false);
       fetchVehicles();
-    } catch (error) {
-      toast.error("Error saving vehicle");
-    }
+    } catch (error) { toast.error("Error saving vehicle"); }
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm("Are you sure you want to delete this vehicle?")) return;
+    if (!confirm("Delete this vehicle?")) return;
     try {
-      await deleteDoc(doc(db, "vehicles", id));
+      if (!user) return;
+      await deleteDoc(doc(db, "agencies", user.uid, "vehicles", id));
       toast.success("Vehicle deleted");
       fetchVehicles();
-    } catch (error) {
-      toast.error("Error deleting vehicle");
+    } catch (error) { toast.error("Error deleting vehicle"); }
+  };
+
+  const getTypeStyle = (type: string) => {
+    switch(type) {
+      case 'SUV': return 'bg-blue-50 text-blue-700 border-blue-100';
+      case 'Sedan': return 'bg-emerald-50 text-emerald-700 border-emerald-100';
+      case 'Tempo': return 'bg-purple-50 text-purple-700 border-purple-100';
+      case 'Bus': return 'bg-orange-50 text-orange-700 border-orange-100';
+      default: return 'bg-gray-50 text-gray-700 border-gray-100';
     }
   };
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex justify-between items-center">
-        <h1 className="text-2xl font-bold text-gray-800">Vehicle Database</h1>
-        <button onClick={openAddModal} className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition shadow-sm">
-          <Plus className="h-4  w-4" /> Add Vehicle
+    <div className="space-y-4 md:space-y-6 pb-24">
+      {/* --- Mobile Header --- */}
+      <div className="flex justify-between items-center px-1">
+        <div>
+          <h1 className="text-2xl font-black text-gray-900 tracking-tight">Fleet</h1>
+          <p className="text-xs font-bold text-blue-600 uppercase tracking-widest">{filteredVehicles.length} Registered</p>
+        </div>
+        <button onClick={openAddModal} className="hidden md:flex items-center gap-2 bg-blue-600 text-white px-5 py-2.5 rounded-2xl font-bold shadow-lg shadow-blue-100">
+          <Plus className="h-5 w-5" /> Add Vehicle
         </button>
       </div>
 
-      {/* Search */}
-      <div className="relative max-w-md">
-        <Search className="absolute left-3 top-2.5 h-5 w-5 text-gray-400" />
+      {/* --- Search --- */}
+      <div className="relative group">
+        <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
         <input
           type="text"
-          placeholder="Search Number, Model or Owner..."
-          className="block w-full pl-10 pr-4 text-gray-900 py-2 border border-gray-300 rounded-lg focus:ring-blue-500"
+          placeholder="Search plate, model or owner..."
+          className="block w-full pl-12 pr-4 py-4 bg-white border border-gray-100 rounded-2xl text-gray-900 focus:ring-4 focus:ring-blue-500/10 font-medium shadow-sm transition-all"
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
         />
       </div>
 
-      {/* Table */}
-      <div className="bg-white rounded-xl shadow-sm border  border-gray-100 overflow-hidden">
+      {/* --- Content Area --- */}
+      <div className="mt-2">
         {loading ? (
-          <div className="p-8 text-center text-gray-500">Loading vehicles...</div>
+          <div className="flex flex-col items-center justify-center p-20 space-y-4">
+             <div className="animate-spin h-10 w-10 border-4 border-blue-600 border-t-transparent rounded-full"></div>
+             <p className="text-gray-400 font-bold text-sm">Inspecting fleet...</p>
+          </div>
         ) : (
-          <table className="w-full text-left text-sm text-gray-600">
-            <thead className="bg-gray-50 text-gray-700 font-medium">
-              <tr>
-                <th className="px-6 py-4">Vehicle Number</th>
-                <th className="px-6 py-4">Model & Type</th>
-                <th className="px-6 py-4">Owner / Agency</th>
-                <th className="px-6 py-4 text-right">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-100">
+          <>
+            {/* Desktop Table */}
+            <div className="hidden md:block bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+              <table className="w-full text-left text-sm text-gray-600">
+                <thead className="bg-gray-50 text-gray-400 font-black uppercase text-[10px] tracking-widest">
+                  <tr>
+                    <th className="px-6 py-4">Registration</th>
+                    <th className="px-6 py-4">Details</th>
+                    <th className="px-6 py-4">Ownership</th>
+                    <th className="px-6 py-4 text-right">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-100">
+                  {filteredVehicles.map((vehicle) => (
+                    <tr key={vehicle.id} className="hover:bg-blue-50/20">
+                      <td className="px-6 py-4">
+                        <div className="inline-flex items-center border-2 border-gray-800 rounded px-2 py-1 bg-white font-mono font-bold text-gray-900 shadow-sm">
+                           {vehicle.number.toUpperCase()}
+                        </div>
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="flex flex-col">
+                            <span className="font-bold text-gray-900">{vehicle.model}</span>
+                            <span className={`text-[10px] w-fit font-black px-2 py-0.5 rounded-full border mt-1 ${getTypeStyle(vehicle.type)}`}>
+                                {vehicle.type}
+                            </span>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4">
+                        <span className="text-xs font-medium text-gray-500 bg-gray-100 px-2 py-1 rounded-md">
+                           {vehicle.owner || "Own Fleet"}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 text-right space-x-1">
+                        <button onClick={() => openEditModal(vehicle)} className="p-2 text-blue-600 hover:bg-blue-50 rounded-xl transition-colors"><Pencil className="h-4 w-4" /></button>
+                        <button onClick={() => handleDelete(vehicle.id)} className="p-2 text-red-600 hover:bg-red-50 rounded-xl transition-colors"><Trash2 className="h-4 w-4" /></button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            {/* --- Mobile Cards --- */}
+            <div className="md:hidden grid grid-cols-1 gap-4">
               {filteredVehicles.map((vehicle) => (
-                <tr key={vehicle.id} className="hover:bg-gray-50">
-                  <td className="px-6 py-4 font-medium text-gray-900 flex items-center gap-2">
-                    <Hash className="h-4 w-4 text-blue-500" />
-                    {vehicle.number.toUpperCase()}
-                  </td>
-                  <td className="px-6 py-4">
-                    <div className="flex items-center gap-2">
-                      <Car className="h-4 w-4 text-gray-400" />
-                      <span>{vehicle.model}</span>
-                      <span className="text-xs bg-gray-100 px-2 py-0.5 rounded text-gray-500 border border-gray-200">
-                        {vehicle.type}
-                      </span>
+                <div key={vehicle.id} className="bg-white rounded-3xl p-5 shadow-sm border border-gray-100">
+                  <div className="flex justify-between items-start mb-4">
+                    <div className="space-y-3">
+                        {/* Plate Look */}
+                        <div className="inline-flex flex-col border-2 border-gray-900 rounded-lg overflow-hidden bg-white shadow-sm">
+                            <div className="bg-blue-600 h-1.5 w-full"></div>
+                            <div className="px-3 py-1 font-mono font-black text-lg text-gray-900 tracking-tight">
+                                {vehicle.number.toUpperCase()}
+                            </div>
+                        </div>
+                        <div>
+                            <h3 className="font-black text-gray-900 text-lg leading-tight">{vehicle.model}</h3>
+                            <span className={`text-[10px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full border ${getTypeStyle(vehicle.type)}`}>
+                                {vehicle.type}
+                            </span>
+                        </div>
                     </div>
-                  </td>
-                  <td className="px-6 py-4">
-                    <div className="flex items-center gap-2">
-                       <User className="h-3 w-3 text-gray-400" />
-                       {vehicle.owner || "Own Fleet"}
+                    <div className="flex flex-col gap-2">
+                        <button onClick={() => openEditModal(vehicle)} className="p-3 bg-gray-50 rounded-2xl text-blue-600 active:bg-blue-100">
+                            <Settings2 className="h-5 w-5" />
+                        </button>
                     </div>
-                  </td>
-                  <td className="px-6 py-4 text-right">
-                    <button onClick={() => openEditModal(vehicle)} className="p-1.5 text-blue-600 hover:bg-blue-50 rounded mr-2">
-                      <Pencil className="h-4 w-4" />
+                  </div>
+
+                  <div className="flex items-center justify-between pt-4 border-t border-gray-50">
+                    <div className="flex items-center gap-2">
+                         <div className={`p-1.5 rounded-lg ${vehicle.owner ? 'bg-amber-50 text-amber-600' : 'bg-emerald-50 text-emerald-600'}`}>
+                            {vehicle.owner ? <Building2 className="h-4 w-4" /> : <ShieldCheck className="h-4 w-4" />}
+                         </div>
+                         <span className="text-xs font-bold text-gray-500">{vehicle.owner || "Own Fleet Asset"}</span>
+                    </div>
+                    <button onClick={() => handleDelete(vehicle.id)} className="text-red-400 p-2">
+                        <Trash2 className="h-4 w-4" />
                     </button>
-                    <button onClick={() => handleDelete(vehicle.id)} className="p-1.5 text-red-600 hover:bg-red-50 rounded">
-                      <Trash2 className="h-4 w-4" />
-                    </button>
-                  </td>
-                </tr>
+                  </div>
+                </div>
               ))}
-            </tbody>
-          </table>
+            </div>
+          </>
         )}
       </div>
 
-      {/* Modal */}
+      {/* --- Modal / Bottom Sheet --- */}
       {isModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 p-4">
-          <div className="bg-white rounded-xl shadow-xl w-full max-w-md">
-            <div className="flex justify-between items-center px-6 py-4 border-b bg-gray-50">
-              <h2 className="text-lg text-gray-800 font-bold">{isEditing ? "Edit Vehicle" : "Add Vehicle"}</h2>
-              <button onClick={() => setIsModalOpen(false)}><X className="h-5 w-5 text-gray-400" /></button>
+        <div className="fixed inset-0 z-[100] flex items-end md:items-center justify-center bg-black/60 backdrop-blur-sm">
+          <div className="bg-white rounded-t-[40px] md:rounded-[32px] shadow-2xl w-full max-w-md animate-in slide-in-from-bottom duration-300">
+            <div className="md:hidden w-12 h-1.5 bg-gray-200 rounded-full mx-auto mt-4 mb-2"></div>
+            
+            <div className="flex justify-between items-center px-8 py-6 border-b border-gray-50">
+              <h2 className="text-2xl font-black text-gray-900">{isEditing ? "Edit Vehicle" : "Add to Fleet"}</h2>
+              <button onClick={() => setIsModalOpen(false)} className="p-2 bg-gray-100 rounded-full text-gray-500"><X className="h-5 w-5" /></button>
             </div>
-            <form onSubmit={handleSubmit} className="p-6 space-y-4">
-              
-              <div>
-                <label className="block text-sm text-gray-800 font-medium mb-1">Vehicle Number (Plate) *</label>
-                <input 
-                  name="number" 
-                  placeholder="e.g. WB 02 AK 1234"
-                  required 
-                  className="w-full border text-gray-900 rounded-lg px-3 py-2 uppercase" 
-                  value={formData.number} 
-                  onChange={handleInputChange} 
-                />
-              </div>
 
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm text-gray-800 font-medium mb-1">Model *</label>
+            <form onSubmit={handleSubmit} className="p-8 space-y-6">
+              <div className="space-y-4">
+                <div className="group">
+                  <label className="block text-[10px] font-black uppercase text-gray-400 mb-1.5 ml-1 tracking-widest">Plate Number (Registration)</label>
                   <input 
-                    name="model" 
-                    placeholder="e.g. Innova Crysta"
+                    name="number" 
+                    placeholder="DL 01 AB 1234"
                     required 
-                    className="w-full border text-gray-900 rounded-lg px-3 py-2" 
-                    value={formData.model} 
+                    className="w-full bg-gray-50 border-0 rounded-2xl text-gray-900 px-5 py-4 focus:ring-2 focus:ring-blue-600 font-mono font-bold text-lg uppercase" 
+                    value={formData.number} 
                     onChange={handleInputChange} 
                   />
                 </div>
-                <div>
-                  <label className="block text-sm text-gray-800 font-medium mb-1">Type</label>
-                  <select 
-                    name="type" 
-                    className="w-full border text-gray-900 rounded-lg px-3 py-2 bg-white" 
-                    value={formData.type} 
-                    onChange={handleInputChange}
-                  >
-                    <option value="Sedan">Sedan</option>
-                    <option value="SUV">SUV</option>
-                    <option value="Hatchback">Hatchback</option>
-                    <option value="Tempo">Tempo Traveller</option>
-                    <option value="Bus">Bus</option>
-                  </select>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="group">
+                    <label className="block text-[10px] font-black uppercase text-gray-400 mb-1.5 ml-1 tracking-widest">Model Name</label>
+                    <input 
+                      name="model" 
+                      placeholder="e.g. Innova"
+                      required 
+                      className="w-full bg-gray-50 border-0 rounded-2xl text-gray-900 px-5 py-4 focus:ring-2 focus:ring-blue-600 font-bold" 
+                      value={formData.model} 
+                      onChange={handleInputChange} 
+                    />
+                  </div>
+                  <div className="group">
+                    <label className="block text-[10px] font-black uppercase text-gray-400 mb-1.5 ml-1 tracking-widest">Segment</label>
+                    <select 
+                      name="type" 
+                      className="w-full bg-gray-50 border-0 rounded-2xl text-gray-900 px-5 py-4 focus:ring-2 focus:ring-blue-600 font-bold appearance-none bg-white" 
+                      value={formData.type} 
+                      onChange={handleInputChange}
+                    >
+                      <option value="Sedan">Sedan</option>
+                      <option value="SUV">SUV</option>
+                      <option value="Tempo">Tempo</option>
+                      <option value="Bus">Bus</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div className="group">
+                  <label className="block text-[10px] font-black uppercase text-gray-400 mb-1.5 ml-1 tracking-widest">Ownership / Provider</label>
+                  <input 
+                    name="owner" 
+                    placeholder="Empty for Own Fleet"
+                    className="w-full bg-gray-50 border-0 rounded-2xl text-gray-900 px-5 py-4 focus:ring-2 focus:ring-blue-600 font-bold" 
+                    value={formData.owner} 
+                    onChange={handleInputChange} 
+                  />
                 </div>
               </div>
 
-              <div>
-                <label className="block text-sm text-gray-800 font-medium mb-1">Owner / Agency Name</label>
-                <input 
-                  name="owner" 
-                  placeholder="Leave empty if Own Fleet"
-                  className="w-full border text-gray-900 rounded-lg px-3 py-2" 
-                  value={formData.owner} 
-                  onChange={handleInputChange} 
-                />
-              </div>
-
-              <button type="submit" className="w-full py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 mt-2">
-                {isEditing ? "Update Vehicle" : "Save Vehicle"}
+              <button type="submit" className="w-full py-5 bg-blue-600 text-white rounded-2xl hover:bg-blue-700 font-black shadow-xl shadow-blue-100 transition-all active:scale-95">
+                {isEditing ? "Update Vehicle" : "Register Vehicle"}
               </button>
+              <div className="h-6 md:hidden"></div>
             </form>
           </div>
         </div>
       )}
+
+      {/* --- Mobile FAB --- */}
+      <button 
+        onClick={openAddModal}
+        className="md:hidden fixed bottom-24 right-6 h-16 w-16 bg-blue-600 rounded-full shadow-2xl flex items-center justify-center text-white z-40 active:scale-90 transition-transform"
+      >
+        <Plus className="h-10 w-10" />
+      </button>
     </div>
   );
 }
