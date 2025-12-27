@@ -201,7 +201,7 @@ const [activeTab, setActiveTab] = useState<"Pending" | "Assigned" | "Completed" 
       </div>
 
       {/* --- Tabs (Segmented Control Style) --- */}
-      <div className="sticky top-14 z-30 bg-gray-50/95 backdrop-blur-sm -mx-4 px-4 py-2 overflow-x-auto no-scrollbar">
+      <div className=" top-14 z-30 bg-gray-50/95 backdrop-blur-sm -mx-4 px-4 py-2 overflow-x-auto no-scrollbar">
         <div className="flex bg-gray-200/50 p-1 rounded-xl min-w-max">
           {["Pending", "Assigned", "Completed", "Cancelled", "Billed"].map((tab) => (
             <button

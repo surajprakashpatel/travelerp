@@ -210,7 +210,7 @@ export default function ReportsPage() {
       </div>
 
       {/* Responsive Pill Tabs */}
-      <div className="flex overflow-x-auto no-scrollbar gap-2 py-2 sticky top-14 bg-gray-50/80 backdrop-blur-md z-30 -mx-4 px-4">
+      <div className="flex overflow-x-auto no-scrollbar gap-2 py-2  top-14 bg-gray-50/80 backdrop-blur-md z-30 -mx-4 px-4">
         {[
           { id: "overview", label: "Overview", icon: LayoutDashboard },
           { id: "trip", label: "Trips", icon: MapIcon },
