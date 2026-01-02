@@ -114,7 +114,7 @@ export default function DashboardLayout({
       {/* --- Desktop Sidebar --- */}
       <aside className="w-64 bg-white border-r border-slate-200 hidden md:flex flex-col">
         <div className="h-16 flex items-center px-6 border-b border-slate-100">
-          <span className="text-xl font-black bg-gradient-to-r from-blue-700 to-blue-500 bg-clip-text text-transparent">Tour Stack</span>
+          <span className="text-xl font-black bg-gradient-to-r from-blue-700 to-blue-500 bg-clip-text text-transparent">Fleet Stack</span>
         </div>
         <nav className="flex-1 overflow-y-auto py-6 space-y-1">
           {[...primaryNav, ...secondaryNav].map((item) => (
@@ -144,7 +144,7 @@ export default function DashboardLayout({
             <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
                 <span className="text-white font-black text-xs">C</span>
             </div>
-            <span className="font-black text-slate-900 tracking-tight">Tour Stack</span>
+            <span className="font-black text-slate-900 tracking-tight">Fleet Stack</span>
           </div>
           <button className="p-1 text-slate-500">
              <UserCircle className="h-6 w-6 text-slate-400" />

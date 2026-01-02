@@ -7,7 +7,7 @@ import { AuthProvider } from "@/context/AuthContext";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "Tour Stack - Cab Management",
+  title: "Fleet Stack - Cab Management",
   description: "ERP System for Cab Management",
 };
 

@@ -37,7 +37,7 @@ export default function LoginPage() {
         <div className="w-20 h-20 bg-white/20 backdrop-blur-md rounded-3xl flex items-center justify-center mb-4 border border-white/30">
           <span className="text-4xl font-black">T</span>
         </div>
-        <h1 className="text-3xl font-black tracking-tight">Tour Stack</h1>
+        <h1 className="text-3xl font-black tracking-tight">Fleet Stack</h1>
         <p className="text-blue-100 font-medium opacity-90">Manage your fleet on the go</p>
       </div>
 
@@ -47,7 +47,7 @@ export default function LoginPage() {
           {/* Desktop Logo Header */}
           <div className="hidden md:block text-center mb-10">
             <h1 className="text-3xl font-black text-gray-900 tracking-tight">
-              Tour <span className="text-blue-600">Stack</span>
+              Fleet <span className="text-blue-600">Stack</span>
             </h1>
             <p className="text-gray-400 font-bold text-sm mt-1 uppercase tracking-widest">Administrator Login</p>
           </div>
@@ -72,7 +72,7 @@ export default function LoginPage() {
                   inputMode="email"
                   required
                   className="block w-full pl-12 pr-4 py-4 bg-gray-50 md:bg-white border border-gray-100 rounded-2xl text-gray-900 focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 transition-all font-medium placeholder:text-gray-300"
-                  placeholder="admin@tourstack.com"
+                  placeholder="admin@fleetstack.com"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                 />
@@ -132,7 +132,7 @@ export default function LoginPage() {
 
           <div className="mt-10 text-center">
             <p className="text-xs text-gray-400 font-bold uppercase tracking-widest">
-              &copy; {new Date().getFullYear()} Tour Stack
+              &copy; {new Date().getFullYear()} Fleet Stack
             </p>
             <div className="flex justify-center gap-4 mt-4">
                 <span className="w-1.5 h-1.5 rounded-full bg-gray-200"></span>

@@ -43,6 +43,7 @@ export default function BillingPage() {
     ratePerKm: 15,
     extraKm: 0,
     extraHours: 0,
+    rent: 0,
     extraHourCharge: 0,
     nightCharge: 0,
     tollParking: 0,
@@ -93,6 +94,7 @@ export default function BillingPage() {
     const subTotal = baseAmount + 
                      extraKmAmount + 
                      extraHoursAmount + 
+                     billData.rent +
                      billData.driverAllowance + 
                      billData.tollParking + 
                      billData.nightCharge;
@@ -177,6 +179,7 @@ export default function BillingPage() {
         ['Extra Distance', `${billData.extraKm} KM`, calculations.extraKmAmount.toFixed(2)],
         ['Overtime/Extra Hours', `${billData.extraHours} Hrs @ ${billData.extraHourCharge}/hr`, calculations.extraHoursAmount.toFixed(2)],
         ['Driver Allowance', '-', billData.driverAllowance.toFixed(2)],
+        ['Rent', '-', billData.rent.toFixed(2)],
         ['Tolls & Parking', '-', billData.tollParking.toFixed(2)],
         ['Night Charges', '-', billData.nightCharge.toFixed(2)],
         ...(billData.gstEnabled ? [['GST', `${billData.gstPercent}%`, calculations.gstAmount.toFixed(2)]] : []),
@@ -296,6 +299,10 @@ export default function BillingPage() {
                     <label className="block text-[10px] font-black uppercase text-slate-500 mb-2">Base Rate / KM</label>
                     <input type="number" name="ratePerKm" value={billData.ratePerKm} onChange={handleInputChange} className="w-full bg-transparent text-xl font-black text-slate-900 border-0 p-0 focus:ring-0" />
                  </div>
+                 <div className="bg-purple-50 rounded-3xl p-5 border border-purple-100">
+        <label className="block text-[10px] font-black uppercase text-purple-600 mb-2">Fixed Rent (₹)</label>
+        <input type="number" name="rent" value={billData.rent} onChange={handleInputChange} className="w-full bg-transparent text-xl font-black text-purple-900 border-0 p-0 focus:ring-0" />
+    </div>
                  <div className="bg-emerald-50 rounded-3xl p-5 border border-emerald-100">
                     <label className="block text-[10px] font-black uppercase text-emerald-600 mb-2">Advance (₹)</label>
                     <input type="number" name="advance" value={billData.advance} onChange={handleInputChange} className="w-full bg-transparent text-xl font-black text-emerald-900 border-0 p-0 focus:ring-0" />
